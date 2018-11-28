@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/toolbar_cwp.ico</file>
+        <file>images/toolbar_msc.ico</file>
+        <file>images/toolbar_phone.ico</file>
+        <file>images/toolbar_radio.ico</file>
+    </qresource>
+</RCC>

@@ -26,10 +26,18 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    mscmonitorform.cpp \
+    cwpmonitorform.cpp \
+    phonemonitorform.cpp \
+    radiomonitorform.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    mscmonitorform.h \
+    cwpmonitorform.h \
+    phonemonitorform.h \
+    radiomonitorform.h
 
 FORMS += \
         mainwindow.ui
@@ -38,3 +46,6 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    images.qrc
