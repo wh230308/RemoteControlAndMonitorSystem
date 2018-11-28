@@ -6,6 +6,12 @@
 class RadioMonitorForm : public QWidget
 {
     Q_OBJECT
+
+enum
+{
+    RadioNumber = 12
+};
+
 public:
     explicit RadioMonitorForm(QWidget *parent = nullptr);
 

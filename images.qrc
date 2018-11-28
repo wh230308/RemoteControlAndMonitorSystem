@@ -4,5 +4,8 @@
         <file>images/toolbar_msc.ico</file>
         <file>images/toolbar_phone.ico</file>
         <file>images/toolbar_radio.ico</file>
+        <file>images/phone.gif</file>
+        <file>images/cwp.gif</file>
+        <file>images/radio.gif</file>
     </qresource>
 </RCC>

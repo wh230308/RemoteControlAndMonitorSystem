@@ -30,14 +30,18 @@ SOURCES += \
     mscmonitorform.cpp \
     cwpmonitorform.cpp \
     phonemonitorform.cpp \
-    radiomonitorform.cpp
+    radiomonitorform.cpp \
+    flowlayout.cpp \
+    utility.cpp
 
 HEADERS += \
         mainwindow.h \
     mscmonitorform.h \
     cwpmonitorform.h \
     phonemonitorform.h \
-    radiomonitorform.h
+    radiomonitorform.h \
+    flowlayout.h \
+    utility.h
 
 FORMS += \
         mainwindow.ui

@@ -24,17 +24,17 @@ MainWindow::MainWindow(QWidget *parent) :
     monitorDevicesMenu->addAction(switchToMSCAct);
     ui->mainToolBar->addAction(switchToMSCAct);
 
-    QIcon phoneItemIcon(":images/toolbar_phone.ico");
-    auto switchToPhoneAct = new QAction(phoneItemIcon, tr("Phone"), this);
-    connect(switchToPhoneAct, SIGNAL(triggered()), this, SLOT(onSwitchToPhone()));
-    monitorDevicesMenu->addAction(switchToPhoneAct);
-    ui->mainToolBar->addAction(switchToPhoneAct);
-
     QIcon cwpItemIcon(":images/toolbar_cwp.ico");
     auto switchToCWPAct = new QAction(cwpItemIcon, tr("CWP"), this);
     connect(switchToCWPAct, SIGNAL(triggered()), this, SLOT(onSwitchToCWP()));
     monitorDevicesMenu->addAction(switchToCWPAct);
     ui->mainToolBar->addAction(switchToCWPAct);
+
+    QIcon phoneItemIcon(":images/toolbar_phone.ico");
+    auto switchToPhoneAct = new QAction(phoneItemIcon, tr("Phone"), this);
+    connect(switchToPhoneAct, SIGNAL(triggered()), this, SLOT(onSwitchToPhone()));
+    monitorDevicesMenu->addAction(switchToPhoneAct);
+    ui->mainToolBar->addAction(switchToPhoneAct);
 
     QIcon radioItemIcon(":images/toolbar_radio.ico");
     auto switchToRadioAct = new QAction(radioItemIcon, tr("Radio"), this);

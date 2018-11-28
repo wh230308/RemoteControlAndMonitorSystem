@@ -6,6 +6,12 @@
 class CWPMonitorForm : public QWidget
 {
     Q_OBJECT
+
+enum
+{
+    CWPNumber = 12
+};
+
 public:
     explicit CWPMonitorForm(QWidget *parent = nullptr);
 

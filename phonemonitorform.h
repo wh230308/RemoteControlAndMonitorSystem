@@ -6,6 +6,12 @@
 class PhoneMonitorForm : public QWidget
 {
     Q_OBJECT
+
+enum
+{
+    PhoneNumber = 12
+};
+
 public:
     explicit PhoneMonitorForm(QWidget *parent = nullptr);
 
