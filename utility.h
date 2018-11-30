@@ -10,6 +10,7 @@ public:
     Utility();
 
     static void fillLabelWithImage(QLabel *label, int width, int height, const QString &imagePath);
+    static void fillLabelWithImage(QLabel *label, const QString &imagePath);
 };
 
 #endif // UTILITY_H
