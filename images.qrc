@@ -12,7 +12,7 @@
         <file>images/svr.gif</file>
         <file>images/card_mpu.gif</file>
         <file>images/card.gif</file>
-        <file>images/lamp_off.png</file>
         <file>images/lamp_running.gif</file>
+        <file>images/lamp_off.gif</file>
     </qresource>
 </RCC>

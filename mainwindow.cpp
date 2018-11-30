@@ -7,7 +7,7 @@
 #include "cwpmonitorform.h"
 #include "phonemonitorform.h"
 #include "radiomonitorform.h"
-
+#include "udpclientmanager.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -56,6 +56,18 @@ MainWindow::MainWindow(QWidget *parent) :
 
     radioMonitorForm = new RadioMonitorForm;
     ui->stackedWidget->addWidget(radioMonitorForm);
+
+    udpClientMgr = new UdpClientManager;
+    connect(udpClientMgr, SIGNAL(heartbeatTimeout()), mscMonitorForm, SLOT(onHeartbeatTimeout()));
+    connect(udpClientMgr, SIGNAL(reportMainCardState(char,char,char)),
+            mscMonitorForm, SLOT(onReportMainCardState(char,char,char)));
+    connect(udpClientMgr, SIGNAL(reportUserCardState(char,char,char,char)),
+            mscMonitorForm, SLOT(onReportUserCardState(char,char,char,char)));
+    connect(udpClientMgr, SIGNAL(reportDeviceInfo(char,char,QByteArray)),
+            mscMonitorForm, SLOT(onReportDeviceInfo(char,char,QByteArray)));
+    //connect(udpClientMgr, SIGNAL(reportCWPState(char,char,QByteArray,QByteArray,QByteArray,QByteArray)),
+    //       cwpMonitorForm, SLOT(onReportCWPState(char,char,QByteArray,QByteArray,QByteArray,QByteArray)));
+    //connect(this, SIGNAL(windowMove(int,int)), cwpMonitorForm, SLOT(onWindowMove(int,int)));
 }
 
 MainWindow::~MainWindow()
@@ -79,10 +91,45 @@ void MainWindow::onSwitchToPhone()
 {
     qDebug() << tr("Switch to phone monitor...");
     ui->stackedWidget->setCurrentWidget(phoneMonitorForm);
+
+    /* test onReportMainCardState and onReportUserCardState
+    char deviceId = 0x01;
+    char slotIndex = 0x00;
+    char state = 0x01;
+    mscMonitorForm->onReportMainCardState(deviceId, slotIndex, state);
+
+    deviceId = 0x02;
+    slotIndex = 0x01;
+    state = 0x01;
+    mscMonitorForm->onReportMainCardState(deviceId, slotIndex, state);
+
+    deviceId = 0x03;
+    for (char i = 0; i < 8; i++) {
+        slotIndex = i;
+        state = 0x01;
+        char type = i;
+        mscMonitorForm->onReportUserCardState(deviceId, slotIndex, state, type);
+    }
+    */
 }
 
 void MainWindow::onSwitchToRadio()
 {
     qDebug() << tr("Switch to radio monitor...");
     ui->stackedWidget->setCurrentWidget(radioMonitorForm);
+
+    /* test onReportDeviceInfo
+    char deviceId[] = { 0x01, 0x02, 0x03, 0x04, 0x06};
+    char deviceType[] = { 0x00, 0x00, 0x01, 0x01, 0x01 };
+    char name[][7] = { { 'S', 'V', 'R', '1' },
+                            { 'S', 'V', 'R', '2' },
+                            { '2', '3', '0', '-', '2', '3', '1' },
+                            { '2', '3', '2', '-', '2', '3', '3' },
+                            { '2', '3', '4', '-', '2', '3', '5' } };
+
+    for (int i = 0; i < 5; i++) {
+        QByteArray deviceName(name[i], sizeof(name[i]) / sizeof(name[i][0]));
+        mscMonitorForm->onReportDeviceInfo(deviceId[i], deviceType[i], deviceName);
+    }
+    */
 }

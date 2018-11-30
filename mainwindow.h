@@ -11,6 +11,7 @@ class MSCMonitorForm;
 class CWPMonitorForm;
 class PhoneMonitorForm;
 class RadioMonitorForm;
+class UdpClientManager;
 
 class MainWindow : public QMainWindow
 {
@@ -32,6 +33,8 @@ private:
     CWPMonitorForm *cwpMonitorForm;
     PhoneMonitorForm *phoneMonitorForm;
     RadioMonitorForm *radioMonitorForm;
+
+    UdpClientManager *udpClientMgr;
 };
 
 #endif // MAINWINDOW_H

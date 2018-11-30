@@ -9,6 +9,7 @@ class QBoxLayout;
 class QGridLayout;
 class QScrollArea;
 class QLabel;
+class QTimer;
 
 class MSCMonitorForm : public QWidget
 {
@@ -38,13 +39,23 @@ enum
     CardLabelHeight = 178,
 
     CardStateLampLabelWidth = 8,
-    CardStateLampLabelHeight = 8
+    CardStateLampLabelHeight = 8,
+
+    DeviceStateTimerInterval = 500 // 设备状态更新定时器
 };
 
 struct SvrItem
 {
     QLabel *labelSvr;
     QLabel *labelSvrName;
+};
+
+struct LIUCardState
+{
+    char deviceId; // 板卡在哪个LIU上
+    char slotIndex; // 板卡在LIU的哪个槽位上
+    char state; // 板卡状态：0离线；1在线
+    char type; // 板卡类型：0x00 ASL; 0x01 ALT;...具体参见协议文档，MPU板无类型用0x7f标识
 };
 
 struct LIUCard
@@ -63,6 +74,17 @@ struct LIUItem
     QVector<LIUCard *> liuCardList;
 };
 
+struct Device
+{
+    int type;
+    union DeviceItem
+    {
+        SvrItem *svrItem;
+        LIUItem *liuItem;
+    };
+
+    DeviceItem deviceItem;
+};
 
 public:
     explicit MSCMonitorForm(QWidget *parent = nullptr);
@@ -71,6 +93,12 @@ public:
 signals:
 
 public slots:
+    void onHeartbeatTimeout();
+    void onReportMainCardState(char deviceId, char slotIndex, char state);
+    void onReportUserCardState(char deviceId, char slotIndex, char state, char type);
+    void onReportDeviceInfo(char deviceId, char deviceType, const QByteArray &deviceName);
+
+    void onUpdateCardStateTimer();
 
 protected:
     void resizeEvent(QResizeEvent *event);
@@ -80,15 +108,16 @@ private:
     void initNetworkBusLayout();
     void initLIUItemsLayout();
 
-    void addSvrItem(int deviceId, int deviceType, const QString &svrName);
+    void addSvrItem(char deviceId, char deviceType, const QString &svrName);
     void addNetworkBusItem();
-    void addLIUItem(int deviceId, int deviceType, const QString &liuItemName);
+    void addLIUItem(char deviceId, char deviceType, const QString &liuItemName);
     void addCardsToLIUItem(QLabel *labelLIUItem, QLabel *labelLIUItemName,
                            QVector<LIUCard *> &liuCardList);
     void initCardLayout(int index, QWidget *parent, QGridLayout *parentLayout,
                         QVector<LIUCard *> &liuCardList);
-
     void checkChildWidgetsSizeToScroll(int formWidth, int formHeight);
+
+    void updateCardState(char deviceId, char slotIndex, char state, char type);
 
 private:
     QScrollArea *scrollArea;
@@ -98,10 +127,12 @@ private:
     QBoxLayout *networkBusItemsLayout;
     QBoxLayout *liuItemsLayout;
 
+    QTimer *deviceStateTimer;
     int formWidth = 0;
     int formHeight = 0;
     int liuItemCount = 0;
-    QMap<int, void *> deviceList;
+    QMap<int, Device *> deviceList;
+    QVector<LIUCardState *> liuCardStateList;
 };
 
 #endif // MSCMONITORFORM_H

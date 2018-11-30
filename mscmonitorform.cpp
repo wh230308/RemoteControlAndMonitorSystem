@@ -6,9 +6,30 @@
 #include <QScrollArea>
 #include <QLabel>
 #include <QResizeEvent>
+#include <QTimer>
+#include <QDebug>
 
 #include "utility.h"
+#include "log.hpp"
 
+static const char *cardType[] = {
+    "ASL",
+    "ALT",
+    "EM",
+    "MTK",
+    "ISDN",
+    "DTK",
+    "DSL",
+    "DIU",
+    "MPU",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "RIU",
+};
 
 MSCMonitorForm::MSCMonitorForm(QWidget *parent) : QWidget(parent)
 {
@@ -35,10 +56,61 @@ MSCMonitorForm::MSCMonitorForm(QWidget *parent) : QWidget(parent)
     initSvrItemsLayout();
     initNetworkBusLayout();
     initLIUItemsLayout();
+
+    deviceStateTimer = new QTimer(this);
+    connect(deviceStateTimer, SIGNAL(timeout()), this, SLOT(onUpdateCardStateTimer()));
+    deviceStateTimer->start(DeviceStateTimerInterval);
 }
 
 MSCMonitorForm::~MSCMonitorForm()
 {
+    foreach (auto item, liuCardStateList) {
+        delete item;
+        item = nullptr;
+    }
+    liuCardStateList.clear();
+
+    if (deviceStateTimer != nullptr)
+        deviceStateTimer->stop();
+}
+
+void MSCMonitorForm::onHeartbeatTimeout()
+{
+}
+
+void MSCMonitorForm::onReportMainCardState(char deviceId, char slotIndex, char state)
+{
+    LOG_TRACE("main card state changed, deviceId:%d, slotIndex:%d, state:%d",
+              deviceId, slotIndex, state);
+
+    char mainCardSlotIndex = 0;
+    if (slotIndex == 0x00)
+        mainCardSlotIndex = 8;
+    else if (slotIndex == 0x01)
+        mainCardSlotIndex = 9;
+
+    updateCardState(deviceId, mainCardSlotIndex, state, 0x7f);
+}
+
+void MSCMonitorForm::onReportUserCardState(char deviceId, char slotIndex, char state, char type)
+{
+    LOG_TRACE("user card state changed, deviceId:%d, slotIndex:%d, state:%d, type:%d",
+              deviceId, slotIndex, state, type);
+
+    updateCardState(deviceId, slotIndex, state, type);
+}
+
+void MSCMonitorForm::onReportDeviceInfo(char deviceId, char deviceType, const QByteArray &deviceName)
+{
+    LOG_TRACE("report the device info, deviceId:%d, deviceType:%d, deviceName:%s",
+              deviceId, deviceType, deviceName.constData());
+
+    if (deviceType == 0) {
+        addSvrItem(deviceId, deviceType, QString::fromUtf8(deviceName));
+    } else if (deviceType == 1) {
+        addLIUItem(deviceId, deviceType, QString::fromUtf8(deviceName));
+        checkChildWidgetsSizeToScroll(formWidth, formHeight);
+    }
 }
 
 void MSCMonitorForm::resizeEvent(QResizeEvent *event)
@@ -92,7 +164,7 @@ void MSCMonitorForm::initLIUItemsLayout()
     liuItemsLayout->addSpacerItem(bottomSpacer);
 }
 
-void MSCMonitorForm::addSvrItem(int deviceId, int deviceType, const QString &svrName)
+void MSCMonitorForm::addSvrItem(char deviceId, char deviceType, const QString &svrName)
 {
     static int objectId = 0;
 
@@ -111,8 +183,10 @@ void MSCMonitorForm::addSvrItem(int deviceId, int deviceType, const QString &svr
     svrInnerLayout->addWidget(labelSvrName);
     svrInnerLayout->setAlignment(labelSvrName, Qt::AlignHCenter | Qt::AlignBottom);
 
-    int key = (deviceId << 16) | deviceType;
-    deviceList.insert(key, static_cast<void *>(new SvrItem{ labelSvr, labelSvrName }));
+    auto device = new Device;
+    device->type = deviceType;
+    device->deviceItem.svrItem = new SvrItem{ labelSvr, labelSvrName };
+    deviceList.insert(deviceId, device);
 
     objectId++;
     liuItemCount++;
@@ -132,7 +206,7 @@ void MSCMonitorForm::addNetworkBusItem()
     objectId++;
 }
 
-void MSCMonitorForm::addLIUItem(int deviceId, int deviceType, const QString &liuItemName)
+void MSCMonitorForm::addLIUItem(char deviceId, char deviceType, const QString &liuItemName)
 {
     static int objectId = 0;
     auto liuItem = new LIUItem;
@@ -148,8 +222,10 @@ void MSCMonitorForm::addLIUItem(int deviceId, int deviceType, const QString &liu
                                        liuItem->labelLIU);
     addCardsToLIUItem(liuItem->labelLIU, liuItem->labelLIUName, liuItem->liuCardList);
 
-    int key = (deviceId << 16) | deviceType;
-    deviceList.insert(key, static_cast<void *>(liuItem));
+    auto device = new Device;
+    device->type = deviceType;
+    device->deviceItem.liuItem = liuItem;
+    deviceList.insert(deviceId, device);
 
     objectId++;
 }
@@ -213,7 +289,7 @@ void MSCMonitorForm::initCardLayout(int index, QWidget *parent, QGridLayout *par
     liuCard->labelRunningStateLamp = new QLabel(liuCard->labelLIUCard);
     liuCard->labelRunningStateLamp->setObjectName(QString("cardRunningStateLamp%1").arg(objectId));
     Utility::fillLabelWithImage(liuCard->labelRunningStateLamp, CardStateLampLabelWidth,
-                                CardStateLampLabelHeight, QString(":/images/lamp_off.png"));
+                                CardStateLampLabelHeight, QString(":/images/lamp_off.gif"));
     cardContenstLayout->addWidget(liuCard->labelRunningStateLamp, 1, 0, Qt::AlignRight);
 
     // 板卡运行状态描述
@@ -231,7 +307,7 @@ void MSCMonitorForm::initCardLayout(int index, QWidget *parent, QGridLayout *par
     liuCard->labelCardPort1Lamp = new QLabel(liuCard->labelLIUCard);
     liuCard->labelCardPort1Lamp->setObjectName(QString("labelCardPort1Lamp%1").arg(objectId));
     Utility::fillLabelWithImage(liuCard->labelCardPort1Lamp, CardStateLampLabelWidth,
-                                CardStateLampLabelHeight, QString(":/images/lamp_off.png"));
+                                CardStateLampLabelHeight, QString(":/images/lamp_off.gif"));
     cardContenstLayout->addWidget(liuCard->labelCardPort1Lamp, 2, 1);
 
     // 板卡端口2状态
@@ -243,7 +319,7 @@ void MSCMonitorForm::initCardLayout(int index, QWidget *parent, QGridLayout *par
     liuCard->labelCardPort2Lamp = new QLabel(liuCard->labelLIUCard);
     liuCard->labelCardPort2Lamp->setObjectName(QString("labelCardPort2Lamp%1").arg(objectId));
     Utility::fillLabelWithImage(liuCard->labelCardPort2Lamp, CardStateLampLabelWidth,
-                                CardStateLampLabelHeight, QString(":/images/lamp_off.png"));
+                                CardStateLampLabelHeight, QString(":/images/lamp_off.gif"));
     cardContenstLayout->addWidget(liuCard->labelCardPort2Lamp, 3, 1);
 
     cardContenstLayout->setRowStretch(0, 60);
@@ -271,4 +347,55 @@ void MSCMonitorForm::checkChildWidgetsSizeToScroll(int formWidth, int formHeight
 
     if (totalChildWidgetsHeight > formHeight)
         scrollAreaWidgetContents->setMinimumHeight(totalChildWidgetsHeight);
+}
+
+void MSCMonitorForm::updateCardState(char deviceId, char slotIndex, char state, char type)
+{
+    foreach (auto item, liuCardStateList) {
+        if (item->deviceId == deviceId && item->slotIndex == slotIndex) {
+            item->state = state;
+            return;
+        }
+    }
+
+    auto liuCardState = new LIUCardState{ deviceId, slotIndex, state, type };
+    liuCardStateList.push_back(liuCardState);
+}
+
+void MSCMonitorForm::onUpdateCardStateTimer()
+{
+    static int count = 0;
+
+    foreach (auto item, liuCardStateList) {
+        if (deviceList.contains(item->deviceId)) {
+            Device *device = deviceList.value(item->deviceId);
+            if (device->type == 0) {
+                qDebug() << tr("svr%1 online").arg(item->deviceId);
+            } else if (device->type == 1) {
+                if (item->slotIndex >= CardNumberPerLIUItem) {
+                    LOG_ERROR("The LIU card slot index is out of range, slot index:%d",
+                              item->slotIndex);
+                    continue;
+                }
+
+                auto liuCard = device->deviceItem.liuItem->liuCardList.at(item->slotIndex);
+                liuCard->labelTypeName->setText(tr("<h3>%1</h3>")
+                                                .arg(cardType[static_cast<int>(item->type)]));
+
+                auto runningStateLamp = liuCard->labelRunningStateLamp;
+                if (item->state == 0)
+                    runningStateLamp->setPixmap(QPixmap(":/images/lamp_off.gif"));
+                else {
+                    qDebug() << "current count:" << count;
+
+                    if (count % 2 == 0)
+                        runningStateLamp->setPixmap(QPixmap(":/images/lamp_running.gif"));
+                    else
+                        runningStateLamp->setPixmap(QPixmap(":/images/lamp_off.gif"));
+                }
+            }
+        }
+    }
+
+    count++;
 }

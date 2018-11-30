@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -32,7 +32,10 @@ SOURCES += \
     phonemonitorform.cpp \
     radiomonitorform.cpp \
     flowlayout.cpp \
-    utility.cpp
+    utility.cpp \
+    udpclient.cpp \
+    log.cpp \
+    udpclientmanager.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -41,7 +44,10 @@ HEADERS += \
     phonemonitorform.h \
     radiomonitorform.h \
     flowlayout.h \
-    utility.h
+    utility.h \
+    udpclient.h \
+    log.hpp \
+    udpclientmanager.h
 
 FORMS += \
         mainwindow.ui
