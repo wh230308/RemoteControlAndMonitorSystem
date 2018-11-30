@@ -92,7 +92,8 @@ void MainWindow::onSwitchToPhone()
     qDebug() << tr("Switch to phone monitor...");
     ui->stackedWidget->setCurrentWidget(phoneMonitorForm);
 
-    /* test onReportMainCardState and onReportUserCardState
+    /*
+    // test onReportMainCardState and onReportUserCardState
     char deviceId = 0x01;
     char slotIndex = 0x00;
     char state = 0x01;
@@ -103,11 +104,11 @@ void MainWindow::onSwitchToPhone()
     state = 0x01;
     mscMonitorForm->onReportMainCardState(deviceId, slotIndex, state);
 
-    deviceId = 0x03;
-    for (char i = 0; i < 8; i++) {
+    deviceId = 0x06;
+    for (char i = 2; i < 15; i++) {
         slotIndex = i;
         state = 0x01;
-        char type = i;
+        char type = i % 9;
         mscMonitorForm->onReportUserCardState(deviceId, slotIndex, state, type);
     }
     */
@@ -118,7 +119,8 @@ void MainWindow::onSwitchToRadio()
     qDebug() << tr("Switch to radio monitor...");
     ui->stackedWidget->setCurrentWidget(radioMonitorForm);
 
-    /* test onReportDeviceInfo
+    /*
+    // test onReportDeviceInfo
     char deviceId[] = { 0x01, 0x02, 0x03, 0x04, 0x06};
     char deviceType[] = { 0x00, 0x00, 0x01, 0x01, 0x01 };
     char name[][7] = { { 'S', 'V', 'R', '1' },

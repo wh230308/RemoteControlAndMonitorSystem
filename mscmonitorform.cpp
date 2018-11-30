@@ -12,7 +12,8 @@
 #include "utility.h"
 #include "log.hpp"
 
-static const char *cardType[] = {
+#define CARD_TYPE_NUMBER (17)
+static const char *cardType[CARD_TYPE_NUMBER] = {
     "ASL",
     "ALT",
     "EM",
@@ -22,6 +23,7 @@ static const char *cardType[] = {
     "DSL",
     "DIU",
     "MPU",
+    "",
     "",
     "",
     "",
@@ -271,6 +273,7 @@ void MSCMonitorForm::initCardLayout(int index, QWidget *parent, QGridLayout *par
     liuCard->labelLIUCard->setObjectName(QString("labelLIUCard%1").arg(objectId));
     Utility::fillLabelWithImage(liuCard->labelLIUCard, CardLabelWidth, CardLabelHeight,
                                 QString(":/images/card.gif"));
+    liuCard->labelLIUCard->setVisible(false);
     parentLayout->addWidget(liuCard->labelLIUCard, 1, index);
     parentLayout->setColumnStretch(index, CardLabelHStretch);
 
@@ -379,6 +382,16 @@ void MSCMonitorForm::onUpdateCardStateTimer()
                 }
 
                 auto liuCard = device->deviceItem.liuItem->liuCardList.at(item->slotIndex);
+                if (!liuCard->labelLIUCard->isVisible())
+                    liuCard->labelLIUCard->setVisible(true);
+
+                if (item->type >= CARD_TYPE_NUMBER) {
+                    LOG_ERROR("The LIU card type is out of range, type index:%d",
+                              item->type);
+                    continue;
+                }
+
+
                 liuCard->labelTypeName->setText(tr("<h3>%1</h3>")
                                                 .arg(cardType[static_cast<int>(item->type)]));
 
