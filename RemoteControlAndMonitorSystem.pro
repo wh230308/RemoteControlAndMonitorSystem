@@ -35,7 +35,8 @@ SOURCES += \
     utility.cpp \
     udpclient.cpp \
     log.cpp \
-    udpclientmanager.cpp
+    udpclientmanager.cpp \
+    serveraddrconfigdialog.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -47,10 +48,12 @@ HEADERS += \
     utility.h \
     udpclient.h \
     log.hpp \
-    udpclientmanager.h
+    udpclientmanager.h \
+    serveraddrconfigdialog.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    serveraddrconfigdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

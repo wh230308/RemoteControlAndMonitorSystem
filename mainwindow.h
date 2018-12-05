@@ -27,6 +27,8 @@ private slots:
     void onSwitchToPhone();
     void onSwitchToRadio();
 
+    void onConfigurateServerAddress();
+
 private:
     Ui::MainWindow *ui;
     MSCMonitorForm *mscMonitorForm;

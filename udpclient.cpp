@@ -14,14 +14,14 @@ UdpClient::UdpClient(QObject *parent) : QObject(parent)
 
 UdpClient::~UdpClient()
 {
-    delete udpSock;
-    delete peerHostAddr;
-
     if (heartbeatTimer != nullptr)
         heartbeatTimer->stop();
+
+    uinitSock();
+    delete svrHostAddr;
 }
 
-bool UdpClient::initSock(const char *peerIp, ushort peerPort)
+bool UdpClient::initSock(const QString &svrIp, ushort svrPort)
 {
     udpSock = new QUdpSocket(this);
     if (!udpSock->bind()) {
@@ -30,23 +30,24 @@ bool UdpClient::initSock(const char *peerIp, ushort peerPort)
     }
 
     connect(udpSock, SIGNAL(readyRead()), this, SLOT(readPendingDatagrams()));
-    peerHostAddr = new QHostAddress(QString(peerIp));
-    this->peerPort = peerPort;
+    svrHostAddr = new QHostAddress(svrIp);
+    this->svrPort = svrPort;
 
     heartbeatTimer = new QTimer(this);
     connect(heartbeatTimer, SIGNAL(timeout()), this, SLOT(onSendHeartbeat()));
-    heartbeatTimer->start(5000); // 定时器周期5s
+    heartbeatTimer->start(HeartBeatTimerInterval);
 
     return true;
 }
 
 void UdpClient::uinitSock()
 {
+   udpSock->close();
 }
 
 bool UdpClient::sendPacket(const char *data, int size)
 {
-    if (-1 == udpSock->writeDatagram(data, static_cast<qint64>(size), *peerHostAddr, peerPort)) {
+    if (-1 == udpSock->writeDatagram(data, static_cast<qint64>(size), *svrHostAddr, svrPort)) {
         LOG_ERROR("send packet failed, error:%d", udpSock->error());
         return false;
     }
@@ -64,14 +65,36 @@ bool UdpClient::sendPacket(const QNetworkDatagram &datagram)
     return true;
 }
 
+void UdpClient::getSvrAddr(QString &svrIp, ushort &svrPort) const
+{
+    svrIp = svrHostAddr->toString();
+    svrPort = this->svrPort;
+}
+
+bool UdpClient::updateSvrAddr(const QString &svrIp, ushort svrPort)
+{
+    LOG_TRACE("update server address, svrIp:%s, svrPort:%u", svrIp.toStdString().c_str(), svrPort);
+
+    if (!svrHostAddr->setAddress(svrIp)) {
+        LOG_ERROR("set server ip address failed, svrIp:%s", svrIp.toStdString().c_str());
+        return false;
+    }
+
+    this->svrPort = svrPort;
+
+    return true;
+}
+
 void UdpClient::onSendHeartbeat()
 {
     heartbeatPktCount++;
     const uchar heartbeatPacket[] = { 0x57, 0x5a, 0xaa, 0x5a, 0xaa };
     sendPacket((const char *)heartbeatPacket, sizeof(heartbeatPacket));
 
+    //qDebug() << "onSendHeartbeat count:" << heartbeatPktCount;
     if (heartbeatPktCount >= 3) {
-        LOG_ERROR("keep avlive timeout");
+        LOG_ERROR("heartbeat keep alived timeout with server %s",
+                  svrHostAddr->toString().toStdString().c_str());
         heartbeatPktCount = 0;
 
         emit heartbeatTimeout();
@@ -100,34 +123,34 @@ void UdpClient::processTheDatagram(const QNetworkDatagram& datagram)
 
     if (datagram.data().size() > 1) {
         if ((0x57 == datagram.data().at(0)) && (datagram.data().size() >= 5)) {
-            qDebug() << tr("processHeartbeatPkt...");
-            LOG_TRACE("process heartbeat...");
+            //qDebug() << tr("processHeartbeatPkt...");
+            //LOG_TRACE("process heartbeat...");
             processHeartbeatPkt(datagram.data());
             return;
         }
 
         if ((0xf0 == static_cast<uchar>(datagram.data().at(0)))
                  && (datagram.data().size() >= 6)) {
-            qDebug() << tr("onReportMainCardState...");
+            //qDebug() << tr("onReportMainCardState...");
             processMainCardStatePkt(datagram.data());
         }
         else if ((0x00 == datagram.data().at(0)) && (datagram.data().size()) >= 9) {
-            qDebug() << tr("onReportUserCardState...");
+            //qDebug() << tr("onReportUserCardState...");
             processUserCardStatePkt(datagram.data());
         }
         else if ((0x20 == datagram.data().at(0)) && (datagram.data().size()) >= 198) {
-            qDebug() << tr("onReportCWPInfo...");
+            //qDebug() << tr("onReportCWPInfo...");
             processCWPIntoPkt(datagram.data());
         }
         else if ((0x10 == datagram.data().at(0)) && (datagram.data().size()) >= 8) {
-            qDebug() << tr("onReportPortState...");
+            //qDebug() << tr("onReportPortState...");
         }
         else if ((0x80 == static_cast<uchar>(datagram.data().at(0))
                   && (datagram.data().size()) >= 8)) {
-            qDebug() << tr("onReportNetworkInterfaceState...");
+            //qDebug() << tr("onReportNetworkInterfaceState...");
         }
         else if ((0x71 == datagram.data().at(0)) && (datagram.data().size()) >= 21) {
-            qDebug() << tr("onReportDeviceInfo...");
+            //qDebug() << tr("onReportDeviceInfo...");
             processDeviceInfoPkt(datagram.data());
         }
 

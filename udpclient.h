@@ -11,15 +11,24 @@ class QTimer;
 class UdpClient : public QObject
 {
     Q_OBJECT
+
+enum
+{
+    HeartBeatTimerInterval = 5000 // 与服务器心跳保活定时器周期
+};
+
 public:
     explicit UdpClient(QObject *parent = nullptr);
     ~UdpClient();
 
 public:
-    bool initSock(const char *peerIp, ushort port);
+    bool initSock(const QString &svrIp, ushort port);
     void uinitSock();
     bool sendPacket(const char *data, int size);
     bool sendPacket(const QNetworkDatagram &datagram);
+
+    void getSvrAddr(QString &svrIp, ushort &svrPort) const;
+    bool updateSvrAddr(const QString &svrIp, ushort svrPort);
 
 signals:
     void heartbeatTimeout();
@@ -46,8 +55,8 @@ private:
 
 private:
     QUdpSocket *udpSock = nullptr;
-    QHostAddress *peerHostAddr = nullptr;
-    ushort peerPort = 0;
+    QHostAddress *svrHostAddr = nullptr;
+    ushort svrPort = 0;
     QTimer *heartbeatTimer = nullptr;
     int heartbeatPktCount = 0;
     bool isFirstHeartbeatPkt = true;

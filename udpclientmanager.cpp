@@ -1,13 +1,16 @@
 #include "udpclientmanager.h"
 #include <QtDebug>
 #include "udpclient.h"
+#include "utility.h"
 
-static const char *svrAddr[] = { "192.168.0.230", "192.168.0.250" };
-#define SVR_PORT 3000
 
 UdpClientManager::UdpClientManager(QObject *parent) : QObject(parent)
 {
-    for (int i = 0; i < 2; i++) {
+    QString svrIpList[2];
+    ushort svrPortList[2];
+    Utility::loadServerAddrConfig(svrIpList[0], svrPortList[0], svrIpList[1], svrPortList[1]);
+
+    for (int i = 0; i < 0; i++) {
         auto client = new UdpClient;
         connect(client, SIGNAL(heartbeatTimeout()), this, SIGNAL(heartbeatTimeout()));
         connect(client, SIGNAL(reportMainCardState(char,char,char)),
@@ -18,7 +21,7 @@ UdpClientManager::UdpClientManager(QObject *parent) : QObject(parent)
                 this, SIGNAL(reportCWPState(char,char,QByteArray,QByteArray,QByteArray,QByteArray)));
         connect(client, SIGNAL(reportDeviceInfo(char,char,QByteArray)),
                 this, SIGNAL(reportDeviceInfo(char,char,QByteArray)));
-        if (client->initSock(svrAddr[i], SVR_PORT))
+        if (client->initSock(svrIpList[i], svrPortList[i]))
             udpClientList.push_back(client);
     }
 }
@@ -29,4 +32,21 @@ UdpClientManager::~UdpClientManager()
         delete client;
     }
     udpClientList.clear();
+}
+
+void UdpClientManager::onServerAddrChanged(const QString &svr1Ip, ushort svr1Port,
+                                           const QString &svr2Ip, ushort svr2Port)
+{
+    QString svrIp;
+    ushort svrPort = 0;
+
+    udpClientList.at(0)->getSvrAddr(svrIp, svrPort);
+    if ((svrIp != svr1Ip) || (svrPort != svr1Port)) {
+        udpClientList.at(0)->updateSvrAddr(svr1Ip, svr1Port);
+    }
+
+    udpClientList.at(1)->getSvrAddr(svrIp, svrPort);
+    if ((svrIp != svr2Ip) || (svrPort != svr2Port)) {
+        udpClientList.at(1)->updateSvrAddr(svr2Ip, svr2Port);
+    }
 }

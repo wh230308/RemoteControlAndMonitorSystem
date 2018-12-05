@@ -8,6 +8,7 @@
 #include "phonemonitorform.h"
 #include "radiomonitorform.h"
 #include "udpclientmanager.h"
+#include "serveraddrconfigdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -42,7 +43,10 @@ MainWindow::MainWindow(QWidget *parent) :
     monitorDevicesMenu->addAction(switchToRadioAct);
     ui->mainToolBar->addAction(switchToRadioAct);
 
-    //auto monitorConfigMenu = menuBar()->addMenu(tr("Configuration"));
+    auto configurationMenu = menuBar()->addMenu(tr("Configuration"));
+    auto svrAddressAct = new QAction(tr("Server Address"), this);
+    connect(svrAddressAct, SIGNAL(triggered()), this, SLOT(onConfigurateServerAddress()));
+    configurationMenu->addAction(svrAddressAct);
 
     mscMonitorForm = new MSCMonitorForm;
     ui->stackedWidget->addWidget(mscMonitorForm);
@@ -90,9 +94,8 @@ void MainWindow::onSwitchToCWP()
 void MainWindow::onSwitchToPhone()
 {
     qDebug() << tr("Switch to phone monitor...");
-    ui->stackedWidget->setCurrentWidget(phoneMonitorForm);
+    //ui->stackedWidget->setCurrentWidget(phoneMonitorForm);
 
-    /*
     // test onReportMainCardState and onReportUserCardState
     char deviceId = 0x01;
     char slotIndex = 0x00;
@@ -111,15 +114,13 @@ void MainWindow::onSwitchToPhone()
         char type = i % 9;
         mscMonitorForm->onReportUserCardState(deviceId, slotIndex, state, type);
     }
-    */
 }
 
 void MainWindow::onSwitchToRadio()
 {
     qDebug() << tr("Switch to radio monitor...");
-    ui->stackedWidget->setCurrentWidget(radioMonitorForm);
+    //ui->stackedWidget->setCurrentWidget(radioMonitorForm);
 
-    /*
     // test onReportDeviceInfo
     char deviceId[] = { 0x01, 0x02, 0x03, 0x04, 0x06};
     char deviceType[] = { 0x00, 0x00, 0x01, 0x01, 0x01 };
@@ -133,5 +134,12 @@ void MainWindow::onSwitchToRadio()
         QByteArray deviceName(name[i], sizeof(name[i]) / sizeof(name[i][0]));
         mscMonitorForm->onReportDeviceInfo(deviceId[i], deviceType[i], deviceName);
     }
-    */
+}
+
+void MainWindow::onConfigurateServerAddress()
+{
+    auto svrAddrConfigDlg = new ServerAddrConfigDialog;
+    connect(svrAddrConfigDlg, SIGNAL(serversAddrChanged(QString,ushort,QString,ushort)),
+            udpClientMgr, SLOT(onServersAddrChanged(QString,ushort,QString,ushort)));
+    svrAddrConfigDlg->exec();
 }

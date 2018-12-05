@@ -13,7 +13,7 @@
 #include "log.hpp"
 
 #define CARD_TYPE_NUMBER (17)
-static const char *cardType[CARD_TYPE_NUMBER] = {
+static const char *cardTypeName[CARD_TYPE_NUMBER] = {
     "ASL",
     "ALT",
     "EM",
@@ -284,7 +284,7 @@ void MSCMonitorForm::initCardLayout(int index, QWidget *parent, QGridLayout *par
 
     // 板卡类型名称
     liuCard->labelTypeName = new QLabel(liuCard->labelLIUCard);
-    liuCard->labelTypeName->setObjectName(QString("cardTypeName%1").arg(objectId));
+    liuCard->labelTypeName->setObjectName(QString("labelTypeName%1").arg(objectId));
     cardContenstLayout->addWidget(liuCard->labelTypeName, 0, 0, 1, 2,
                                   Qt::AlignCenter | Qt::AlignBottom);
 
@@ -373,7 +373,6 @@ void MSCMonitorForm::onUpdateCardStateTimer()
         if (deviceList.contains(item->deviceId)) {
             Device *device = deviceList.value(item->deviceId);
             if (device->type == 0) {
-                qDebug() << tr("svr%1 online").arg(item->deviceId);
             } else if (device->type == 1) {
                 if (item->slotIndex >= CardNumberPerLIUItem) {
                     LOG_ERROR("The LIU card slot index is out of range, slot index:%d",
@@ -385,22 +384,24 @@ void MSCMonitorForm::onUpdateCardStateTimer()
                 if (!liuCard->labelLIUCard->isVisible())
                     liuCard->labelLIUCard->setVisible(true);
 
-                if (item->type >= CARD_TYPE_NUMBER) {
+                if ((item->type >= CARD_TYPE_NUMBER) && (item->type != 0x7f)) {
                     LOG_ERROR("The LIU card type is out of range, type index:%d",
                               item->type);
                     continue;
                 }
 
-
-                liuCard->labelTypeName->setText(tr("<h3>%1</h3>")
-                                                .arg(cardType[static_cast<int>(item->type)]));
+                if (item->type == 0x7f) {
+                    liuCard->labelTypeName->setText(tr("<h3>%1</h3>").arg(cardTypeName[8]));
+                }
+                else {
+                    liuCard->labelTypeName->setText(tr("<h3>%1</h3>")
+                                                    .arg(cardTypeName[static_cast<int>(item->type)]));
+                }
 
                 auto runningStateLamp = liuCard->labelRunningStateLamp;
                 if (item->state == 0)
                     runningStateLamp->setPixmap(QPixmap(":/images/lamp_off.gif"));
                 else {
-                    qDebug() << "current count:" << count;
-
                     if (count % 2 == 0)
                         runningStateLamp->setPixmap(QPixmap(":/images/lamp_running.gif"));
                     else

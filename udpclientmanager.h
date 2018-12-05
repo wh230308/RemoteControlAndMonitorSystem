@@ -22,6 +22,10 @@ signals:
                         const QByteArray &userRoles);
     void reportDeviceInfo(char deviceId, char deviceType, const QByteArray &deviceName);
 
+public slots:
+    void onServerAddrChanged(const QString &svr1Ip, ushort svr1Port,
+                              const QString &svr2Ip, ushort svr2Port);
+
 private:
     QVector<UdpClient *> udpClientList;
 };

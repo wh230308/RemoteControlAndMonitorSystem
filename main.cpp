@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
     base::log::set_storage_type(base::log::kDiskFile);
     base::log::set_reserve_days(7);
 
+    LOG_STARTUP("remote control and monitor system is running...");
     MainWindow w;
     w.showMaximized();
 
