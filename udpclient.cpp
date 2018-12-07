@@ -109,7 +109,7 @@ void UdpClient::readPendingDatagrams()
     }
 }
 
-void UdpClient::processTheDatagram(const QNetworkDatagram& datagram)
+void UdpClient::processTheDatagram(const QNetworkDatagram &datagram)
 {
     if (!datagram.isValid()) {
         LOG_ERROR("the datagarm is invalid");
@@ -144,10 +144,12 @@ void UdpClient::processTheDatagram(const QNetworkDatagram& datagram)
         }
         else if ((0x10 == datagram.data().at(0)) && (datagram.data().size()) >= 8) {
             //qDebug() << tr("onReportPortState...");
+            processUserCardPortStatePkt(datagram.data());
         }
         else if ((0x80 == static_cast<uchar>(datagram.data().at(0))
                   && (datagram.data().size()) >= 8)) {
             //qDebug() << tr("onReportNetworkInterfaceState...");
+            processMPUNetworkPortsStatePkt(datagram.data());
         }
         else if ((0x71 == datagram.data().at(0)) && (datagram.data().size()) >= 21) {
             //qDebug() << tr("onReportDeviceInfo...");
@@ -158,7 +160,7 @@ void UdpClient::processTheDatagram(const QNetworkDatagram& datagram)
     }
 }
 
-void UdpClient::processHeartbeatPkt(const QByteArray& byteArray)
+void UdpClient::processHeartbeatPkt(const QByteArray &byteArray)
 {
     if ((0x5a == static_cast<uchar>(byteArray.at(1)))
             && (0xaa == static_cast<uchar>(byteArray.at(2)))
@@ -174,7 +176,7 @@ void UdpClient::processHeartbeatPkt(const QByteArray& byteArray)
     }
 }
 
-void UdpClient::processMainCardStatePkt(const QByteArray& byteArray)
+void UdpClient::processMainCardStatePkt(const QByteArray &byteArray)
 {
     char deviceId = byteArray.at(4);
     char slotIndex = byteArray.at(3);
@@ -183,7 +185,7 @@ void UdpClient::processMainCardStatePkt(const QByteArray& byteArray)
     emit reportMainCardState(deviceId, slotIndex, state);
 }
 
-void UdpClient::processUserCardStatePkt(const QByteArray& byteArray)
+void UdpClient::processUserCardStatePkt(const QByteArray &byteArray)
 {
     char deviceId = byteArray.at(3);
     char slotIndex = byteArray.at(4);
@@ -193,7 +195,7 @@ void UdpClient::processUserCardStatePkt(const QByteArray& byteArray)
     emit reportUserCardState(deviceId, slotIndex, state, type);
 }
 
-void UdpClient::processCWPIntoPkt(const QByteArray& byteArray)
+void UdpClient::processCWPIntoPkt(const QByteArray &byteArray)
 {
     char seatId = byteArray.at(4);
     char seatState = byteArray.at(5);
@@ -205,7 +207,7 @@ void UdpClient::processCWPIntoPkt(const QByteArray& byteArray)
     emit reportCWPState(seatId, seatState, userName, leftPhone, rightPhone, userRoles);
 }
 
-void UdpClient::processDeviceInfoPkt(const QByteArray& byteArray)
+void UdpClient::processDeviceInfoPkt(const QByteArray &byteArray)
 {
     char deviceId = byteArray.at(3);
     char deviceType = byteArray.at(4);
@@ -214,7 +216,28 @@ void UdpClient::processDeviceInfoPkt(const QByteArray& byteArray)
     emit reportDeviceInfo(deviceId, deviceType, deviceName);
 }
 
-void UdpClient::replyPkt(const QNetworkDatagram& datagram)
+void UdpClient::processMPUNetworkPortsStatePkt(const QByteArray &byteArray)
+{
+    char mpuIndex = byteArray.at(3);
+    char deviceId = byteArray.at(4);
+    char port1State = byteArray.at(5);
+    char port2State = byteArray.at(6);
+
+    emit reportMPUNetworkPortsState(mpuIndex, deviceId, port1State, port2State);
+}
+
+void UdpClient::processUserCardPortStatePkt(const QByteArray &byteArray)
+{
+    char portId = byteArray.at(3);
+    char deviceId = byteArray.at(4);
+    char slotIndex = byteArray.at(5);
+    char state = byteArray.at(6);
+    char type = byteArray.at(7);
+
+    emit reportUserCardPortState(portId, deviceId, slotIndex, state, type);
+}
+
+void UdpClient::replyPkt(const QNetworkDatagram &datagram)
 {
     QByteArray byteArray;
     byteArray.push_back(static_cast<char>(0xaa));

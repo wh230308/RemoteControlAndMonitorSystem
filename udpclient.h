@@ -38,20 +38,23 @@ signals:
                         const QByteArray &leftPhone, const QByteArray &rightPhone,
                         const QByteArray &userRoles);
     void reportDeviceInfo(char deviceId, char deviceType, const QByteArray &deviceName);
-
+    void reportMPUNetworkPortsState(char mpuIndex, char deviceId, char port1State, char port2State);
+    void reportUserCardPortState(char portId, char deviceId, char slotIndex, char state, char type);
 
 public slots:
     void onSendHeartbeat();
     void readPendingDatagrams();
 
 private:
-    void processTheDatagram(const QNetworkDatagram& datagram);
-    void processHeartbeatPkt(const QByteArray& byteArray);
-    void processMainCardStatePkt(const QByteArray& byteArray);
-    void processUserCardStatePkt(const QByteArray& byteArray);
-    void processCWPIntoPkt(const QByteArray& byteArray);
-    void processDeviceInfoPkt(const QByteArray& byteArray);
-    void replyPkt(const QNetworkDatagram& datagram);
+    void processTheDatagram(const QNetworkDatagram &datagram);
+    void processHeartbeatPkt(const QByteArray &byteArray);
+    void processMainCardStatePkt(const QByteArray &byteArray);
+    void processUserCardStatePkt(const QByteArray &byteArray);
+    void processCWPIntoPkt(const QByteArray &byteArray);
+    void processDeviceInfoPkt(const QByteArray &byteArray);
+    void processMPUNetworkPortsStatePkt(const QByteArray &byteArray);
+    void processUserCardPortStatePkt(const QByteArray &byteArray);
+    void replyPkt(const QNetworkDatagram &datagram);
 
 private:
     QUdpSocket *udpSock = nullptr;

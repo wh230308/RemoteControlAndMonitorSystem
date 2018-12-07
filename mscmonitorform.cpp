@@ -11,27 +11,9 @@
 
 #include "utility.h"
 #include "log.hpp"
+#include "customliulabel.h"
+#include "customcardlabel.h"
 
-#define CARD_TYPE_NUMBER (17)
-static const char *cardTypeName[CARD_TYPE_NUMBER] = {
-    "ASL",
-    "ALT",
-    "EM",
-    "MTK",
-    "ISDN",
-    "DTK",
-    "DSL",
-    "DIU",
-    "MPU",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "RIU",
-};
 
 MSCMonitorForm::MSCMonitorForm(QWidget *parent) : QWidget(parent)
 {
@@ -60,18 +42,12 @@ MSCMonitorForm::MSCMonitorForm(QWidget *parent) : QWidget(parent)
     initLIUItemsLayout();
 
     deviceStateTimer = new QTimer(this);
-    connect(deviceStateTimer, SIGNAL(timeout()), this, SLOT(onUpdateCardStateTimer()));
+    connect(deviceStateTimer, SIGNAL(timeout()), this, SLOT(onUpdateDeviceStateTimer()));
     deviceStateTimer->start(DeviceStateTimerInterval);
 }
 
 MSCMonitorForm::~MSCMonitorForm()
 {
-    foreach (auto item, liuCardStateList) {
-        delete item;
-        item = nullptr;
-    }
-    liuCardStateList.clear();
-
     if (deviceStateTimer != nullptr)
         deviceStateTimer->stop();
 }
@@ -85,13 +61,13 @@ void MSCMonitorForm::onReportMainCardState(char deviceId, char slotIndex, char s
     LOG_TRACE("main card state changed, deviceId:%d, slotIndex:%d, state:%d",
               deviceId, slotIndex, state);
 
-    char mainCardSlotIndex = 0;
+    int mainCardSlotIndex = 0;
     if (slotIndex == 0x00)
-        mainCardSlotIndex = 8;
+        mainCardSlotIndex = 0x08;
     else if (slotIndex == 0x01)
-        mainCardSlotIndex = 9;
+        mainCardSlotIndex = 0x09;
 
-    updateCardState(deviceId, mainCardSlotIndex, state, 0x7f);
+    updateCardRunningState(deviceId, mainCardSlotIndex, state, 0x00);
 }
 
 void MSCMonitorForm::onReportUserCardState(char deviceId, char slotIndex, char state, char type)
@@ -99,7 +75,7 @@ void MSCMonitorForm::onReportUserCardState(char deviceId, char slotIndex, char s
     LOG_TRACE("user card state changed, deviceId:%d, slotIndex:%d, state:%d, type:%d",
               deviceId, slotIndex, state, type);
 
-    updateCardState(deviceId, slotIndex, state, type);
+    updateCardRunningState(deviceId, slotIndex, state, type);
 }
 
 void MSCMonitorForm::onReportDeviceInfo(char deviceId, char deviceType, const QByteArray &deviceName)
@@ -113,6 +89,24 @@ void MSCMonitorForm::onReportDeviceInfo(char deviceId, char deviceType, const QB
         addLIUItem(deviceId, deviceType, QString::fromUtf8(deviceName));
         checkChildWidgetsSizeToScroll(formWidth, formHeight);
     }
+}
+
+void MSCMonitorForm::onReportMPUNetworkPortsState(char mpuIndex, char deviceId, char port1State,
+                                                  char port2State)
+{
+    LOG_TRACE("report the mpu network port state, mpuIndex:%d, deviceId:%d, port1State:%d, port2State:%d",
+              mpuIndex, deviceId, port1State, port2State);
+
+    updateMPUNetworkPortsState(mpuIndex, deviceId, port1State, port2State);
+}
+
+void MSCMonitorForm::onReportUserCardPortState(char portId, char deviceId, char slotIndex,
+                                               char state, char type)
+{
+    LOG_TRACE("report the user card port state, portId:%d, deviceId:%d, slotIndex:%d, state:%d, type:%d",
+              static_cast<int>(portId), deviceId, slotIndex, state, type);
+
+    updateUserCardPortState(static_cast<int>(portId), deviceId, slotIndex, state, type);
 }
 
 void MSCMonitorForm::resizeEvent(QResizeEvent *event)
@@ -166,8 +160,10 @@ void MSCMonitorForm::initLIUItemsLayout()
     liuItemsLayout->addSpacerItem(bottomSpacer);
 }
 
-void MSCMonitorForm::addSvrItem(char deviceId, char deviceType, const QString &svrName)
+void MSCMonitorForm::addSvrItem(int deviceId, int deviceType, const QString &svrName)
 {
+    Q_ASSERT((deviceType == 0x00) || (deviceType == 0x01));
+
     static int objectId = 0;
 
     auto labelSvr = new QLabel(scrollAreaWidgetContents);
@@ -208,128 +204,25 @@ void MSCMonitorForm::addNetworkBusItem()
     objectId++;
 }
 
-void MSCMonitorForm::addLIUItem(char deviceId, char deviceType, const QString &liuItemName)
+void MSCMonitorForm::addLIUItem(int deviceId, int deviceType, const QString &liuItemName)
 {
-    static int objectId = 0;
-    auto liuItem = new LIUItem;
+    Q_ASSERT((deviceType == 0x00) || (deviceType == 0x01));
 
-    liuItem->labelLIU = new QLabel(scrollAreaWidgetContents);
-    liuItem->labelLIU->setObjectName(QString("labelLIUItem%1").arg(objectId));
-    Utility::fillLabelWithImage(liuItem->labelLIU, LIULabelWidth, LIULabelHeigth,
-                                QString(":/images/liu_item.gif"));
-    liuItemsLayout->insertWidget(liuItemsLayout->count() - 1, liuItem->labelLIU);
-    liuItemsLayout->setAlignment(liuItem->labelLIU, Qt::AlignHCenter | Qt::AlignTop);
+    static uint objectId = 0;
 
-    liuItem->labelLIUName = new QLabel(QString("<h2>Frame:%1</h2>").arg(liuItemName),
-                                       liuItem->labelLIU);
-    addCardsToLIUItem(liuItem->labelLIU, liuItem->labelLIUName, liuItem->liuCardList);
+    auto liuItem = new CustomLIULabel(objectId, liuItemName, scrollAreaWidgetContents);
+    liuItemsLayout->insertWidget(liuItemsLayout->count() - 1, liuItem);
+    liuItemsLayout->setAlignment(liuItem, Qt::AlignHCenter | Qt::AlignTop);
 
-    auto device = new Device;
-    device->type = deviceType;
-    device->deviceItem.liuItem = liuItem;
-    deviceList.insert(deviceId, device);
-
-    objectId++;
-}
-
-void MSCMonitorForm::addCardsToLIUItem(QLabel *labelLIUItem, QLabel *labelLIUItemName,
-                                       QVector<LIUCard *> &liuCardList)
-{
-    static int objectId = 0;
-
-    auto liuItemContenstLayout = new QGridLayout(labelLIUItem);
-    liuItemContenstLayout->setObjectName(QString("liuItemContenstLayout%1").arg(objectId));
-    liuItemContenstLayout->setHorizontalSpacing(0);
-
-    // LIU名称
-    labelLIUItemName->setObjectName(QString("labelLIUItemName%1").arg(objectId));
-    labelLIUItemName->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-    liuItemContenstLayout->addWidget(labelLIUItemName, 0, 0, 2, 1);
-    liuItemContenstLayout->setColumnStretch(0, LIUItemLabelNameHStretch);
-
-    for (int i = 0; i < CardNumberPerLIUItem; i++) {
-        // 板卡槽位序号
-        auto labelCardId = new QLabel(tr("<h3>%1</h3>").arg(i + 1), labelLIUItem);
-        labelCardId->setObjectName(QString("labelCardId%1").arg(objectId * 10 + i));
-        labelCardId->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-        liuItemContenstLayout->addWidget(labelCardId, 0, i + 1);
-
-        // 板卡面板
-        initCardLayout(i + 1, labelLIUItem, liuItemContenstLayout, liuCardList);
+    if (!deviceList.contains(deviceId)) {
+        auto device = new Device;
+        device->type = deviceType;
+        device->deviceItem.liuItem = liuItem;
+        deviceList.insert(deviceId, device);
+    } else {
+        auto device = deviceList.value(deviceId);
+        device->deviceItem.liuItem = liuItem;
     }
-
-    objectId++;
-}
-
-void MSCMonitorForm::initCardLayout(int index, QWidget *parent, QGridLayout *parentLayout,
-                                    QVector<LIUCard *> &liuCardList)
-{
-    static int objectId = 0;
-    auto liuCard = new LIUCard;
-    liuCardList.push_back(liuCard);
-
-    // 板卡
-    liuCard->labelLIUCard = new QLabel(parent);
-    liuCard->labelLIUCard->setObjectName(QString("labelLIUCard%1").arg(objectId));
-    Utility::fillLabelWithImage(liuCard->labelLIUCard, CardLabelWidth, CardLabelHeight,
-                                QString(":/images/card.gif"));
-    liuCard->labelLIUCard->setVisible(false);
-    parentLayout->addWidget(liuCard->labelLIUCard, 1, index);
-    parentLayout->setColumnStretch(index, CardLabelHStretch);
-
-    auto cardContenstLayout = new QGridLayout(liuCard->labelLIUCard);
-    cardContenstLayout->setObjectName(QString("cardContenstLayout%1").arg(objectId));
-    cardContenstLayout->setHorizontalSpacing(7);
-    cardContenstLayout->setVerticalSpacing(0);
-
-    // 板卡类型名称
-    liuCard->labelTypeName = new QLabel(liuCard->labelLIUCard);
-    liuCard->labelTypeName->setObjectName(QString("labelTypeName%1").arg(objectId));
-    cardContenstLayout->addWidget(liuCard->labelTypeName, 0, 0, 1, 2,
-                                  Qt::AlignCenter | Qt::AlignBottom);
-
-    // 板卡运行状态灯
-    liuCard->labelRunningStateLamp = new QLabel(liuCard->labelLIUCard);
-    liuCard->labelRunningStateLamp->setObjectName(QString("cardRunningStateLamp%1").arg(objectId));
-    Utility::fillLabelWithImage(liuCard->labelRunningStateLamp, CardStateLampLabelWidth,
-                                CardStateLampLabelHeight, QString(":/images/lamp_off.gif"));
-    cardContenstLayout->addWidget(liuCard->labelRunningStateLamp, 1, 0, Qt::AlignRight);
-
-    // 板卡运行状态描述
-    auto cardRunningStateDesc= new QLabel(tr("<b>Run</b>"), liuCard->labelLIUCard);
-    cardRunningStateDesc->setObjectName(QString("cardRunningStateDesc%1").arg(objectId));
-    cardRunningStateDesc->setFont(QFont(QString("Microsoft YaHei"), 6, 1));
-    cardContenstLayout->addWidget(cardRunningStateDesc, 1, 1, Qt::AlignLeft);
-
-    // 板卡端口1状态
-    auto cardPort1Number = new QLabel(tr("<b>1</b>"), liuCard->labelLIUCard);
-    cardPort1Number->setObjectName(QString("cardPort1Number%1").arg(objectId));
-    cardPort1Number->setFont(QFont(QString("Microsoft YaHei"), 6, 1));
-    cardContenstLayout->addWidget(cardPort1Number, 2, 0, Qt::AlignRight);
-
-    liuCard->labelCardPort1Lamp = new QLabel(liuCard->labelLIUCard);
-    liuCard->labelCardPort1Lamp->setObjectName(QString("labelCardPort1Lamp%1").arg(objectId));
-    Utility::fillLabelWithImage(liuCard->labelCardPort1Lamp, CardStateLampLabelWidth,
-                                CardStateLampLabelHeight, QString(":/images/lamp_off.gif"));
-    cardContenstLayout->addWidget(liuCard->labelCardPort1Lamp, 2, 1);
-
-    // 板卡端口2状态
-    auto cardPort2Number = new QLabel(tr("<b>2</b>"), liuCard->labelLIUCard);
-    cardPort2Number->setObjectName(QString("cardPort2Number%1").arg(objectId));
-    cardPort2Number->setFont(QFont(QString("Microsoft YaHei"), 6, 1));
-    cardContenstLayout->addWidget(cardPort2Number, 3, 0, Qt::AlignRight);
-
-    liuCard->labelCardPort2Lamp = new QLabel(liuCard->labelLIUCard);
-    liuCard->labelCardPort2Lamp->setObjectName(QString("labelCardPort2Lamp%1").arg(objectId));
-    Utility::fillLabelWithImage(liuCard->labelCardPort2Lamp, CardStateLampLabelWidth,
-                                CardStateLampLabelHeight, QString(":/images/lamp_off.gif"));
-    cardContenstLayout->addWidget(liuCard->labelCardPort2Lamp, 3, 1);
-
-    cardContenstLayout->setRowStretch(0, 60);
-    cardContenstLayout->setRowStretch(1, 20);
-    cardContenstLayout->setRowStretch(2, 15);
-    cardContenstLayout->setRowStretch(3, 15);
-    cardContenstLayout->setRowStretch(4, 66);
 
     objectId++;
 }
@@ -352,64 +245,97 @@ void MSCMonitorForm::checkChildWidgetsSizeToScroll(int formWidth, int formHeight
         scrollAreaWidgetContents->setMinimumHeight(totalChildWidgetsHeight);
 }
 
-void MSCMonitorForm::updateCardState(char deviceId, char slotIndex, char state, char type)
+void MSCMonitorForm::updateCardRunningState(int deviceId, int slotIndex, int state, int type)
 {
-    foreach (auto item, liuCardStateList) {
-        if (item->deviceId == deviceId && item->slotIndex == slotIndex) {
-            item->state = state;
-            return;
-        }
-    }
+    Q_ASSERT(slotIndex >= 00);
+    Q_ASSERT(slotIndex <= CustomLIULabel::CardNumberPerLIU);
+    Q_ASSERT((state == 0x00) || (state == 0x01));
+    Q_ASSERT(type >= 0x00);
+    Q_ASSERT(type <= 0x10);
 
-    auto liuCardState = new LIUCardState{ deviceId, slotIndex, state, type };
-    liuCardStateList.push_back(liuCardState);
+    int key = (deviceId << 16) | slotIndex;
+    if (!deviceStateList.contains(key)) {
+        deviceStateList.insert(key, new DeviceState{ true, deviceId, slotIndex, state, type,
+                                                     QVector<DeviceState::PortState *>() });
+    } else {
+        auto deviceState = deviceStateList.value(key);
+        deviceState->runningState = state;
+        deviceState->cardType = type;
+    }
 }
 
-void MSCMonitorForm::onUpdateCardStateTimer()
+void MSCMonitorForm::updateMPUNetworkPortsState(int mpuIndex, int deviceId, int port1State,
+                                                int port2State)
 {
-    static int count = 0;
+    Q_ASSERT((mpuIndex == 0x00) || (mpuIndex == 0x01));
+    Q_ASSERT((port1State == 0x00) || (port1State == 0x01));
+    Q_ASSERT((port2State == 0x00) || (port2State == 0x01));
 
-    foreach (auto item, liuCardStateList) {
+    char slotIndex = 0x00;
+    if (mpuIndex == 0x00)
+        slotIndex = 0x08;
+    else
+        slotIndex = 0x09;
+
+    int key = (deviceId << 16) | slotIndex;
+    if (!deviceStateList.contains(key)) {
+        LOG_ERROR("cannot find MPU card, mpuIndex:%d, deviceId:%d", mpuIndex, deviceId);
+        return;
+    }
+
+    auto deviceState = deviceStateList.value(key);
+    deviceState->isStateChanged = true;
+    deviceState->portStateList.push_back(new DeviceState::PortState{ 0x00, port1State });
+    deviceState->portStateList.push_back(new DeviceState::PortState{ 0x00, port2State });
+}
+
+void MSCMonitorForm::updateUserCardPortState(int portId, int deviceId, int slotIndex, int state,
+                                             int type)
+{
+    Q_ASSERT(portId >= 0);
+    Q_ASSERT(portId <= CustomCardLabel::MaximumPortId);
+    Q_ASSERT(slotIndex >= 00);
+    Q_ASSERT(slotIndex <= CustomLIULabel::CardNumberPerLIU);
+    Q_ASSERT((state == 0x00) || (state == 0x01));
+    Q_ASSERT(type >= 0x00);
+    Q_ASSERT(type <= 0x0a);
+
+    int key = (deviceId << 16) | slotIndex;
+    if (!deviceStateList.contains(key)) {
+        LOG_ERROR("cannot find User card, portId:%d, deviceId:%d, slotIndex:%d, state:%d, type:%d",
+                  portId, deviceId, slotIndex, state, type);
+        return;
+    }
+
+    auto deviceState = deviceStateList.value(key);
+    if (portId >= deviceState->portStateList.size()) {
+        deviceState->portStateList.push_back(new DeviceState::PortState{ type, state });
+    } else {
+        auto portState = deviceState->portStateList.at(portId);
+        portState->type = type;
+        portState->state = state;
+    }
+}
+
+void MSCMonitorForm::onUpdateDeviceStateTimer()
+{
+    foreach (auto item, deviceStateList) {
         if (deviceList.contains(item->deviceId)) {
-            Device *device = deviceList.value(item->deviceId);
-            if (device->type == 0) {
-            } else if (device->type == 1) {
-                if (item->slotIndex >= CardNumberPerLIUItem) {
-                    LOG_ERROR("The LIU card slot index is out of range, slot index:%d",
-                              item->slotIndex);
-                    continue;
-                }
-
-                auto liuCard = device->deviceItem.liuItem->liuCardList.at(item->slotIndex);
-                if (!liuCard->labelLIUCard->isVisible())
-                    liuCard->labelLIUCard->setVisible(true);
-
-                if ((item->type >= CARD_TYPE_NUMBER) && (item->type != 0x7f)) {
-                    LOG_ERROR("The LIU card type is out of range, type index:%d",
-                              item->type);
-                    continue;
-                }
-
-                if (item->type == 0x7f) {
-                    liuCard->labelTypeName->setText(tr("<h3>%1</h3>").arg(cardTypeName[8]));
-                }
-                else {
-                    liuCard->labelTypeName->setText(tr("<h3>%1</h3>")
-                                                    .arg(cardTypeName[static_cast<int>(item->type)]));
-                }
-
-                auto runningStateLamp = liuCard->labelRunningStateLamp;
-                if (item->state == 0)
-                    runningStateLamp->setPixmap(QPixmap(":/images/lamp_off.gif"));
-                else {
-                    if (count % 2 == 0)
-                        runningStateLamp->setPixmap(QPixmap(":/images/lamp_running.gif"));
-                    else
-                        runningStateLamp->setPixmap(QPixmap(":/images/lamp_off.gif"));
+            auto device = deviceList.value(item->deviceId);
+            if (device->type == 0x00) {
+            } else if (device->type == 0x01) {
+                auto liuItem = device->deviceItem.liuItem;
+                if (item->isStateChanged) {
+                    item->isStateChanged = false;
+                    liuItem->updateCardRunningState(item->slotIndex, item->runningState,
+                                                    item->cardType);
+                    for (int i = 0; i < item->portStateList.size(); i++) {
+                        auto portState = item->portStateList.at(i);
+                        liuItem->updateCardPortState(item->slotIndex, i, portState->state,
+                                                     portState->type);
+                    }
                 }
             }
         }
     }
-
-    count++;
 }

@@ -69,6 +69,10 @@ MainWindow::MainWindow(QWidget *parent) :
             mscMonitorForm, SLOT(onReportUserCardState(char,char,char,char)));
     connect(udpClientMgr, SIGNAL(reportDeviceInfo(char,char,QByteArray)),
             mscMonitorForm, SLOT(onReportDeviceInfo(char,char,QByteArray)));
+    connect(udpClientMgr, SIGNAL(reportMPUNetworkPortsState(char,char,char,char)),
+            mscMonitorForm, SLOT(onReportMPUNetworkPortsState(char,char,char,char)));
+    connect(udpClientMgr, SIGNAL(reportUserCardPortState(char,char,char,char,char)),
+            mscMonitorForm, SLOT(onReportUserCardPortState(char,char,char,char,char)));
     //connect(udpClientMgr, SIGNAL(reportCWPState(char,char,QByteArray,QByteArray,QByteArray,QByteArray)),
     //       cwpMonitorForm, SLOT(onReportCWPState(char,char,QByteArray,QByteArray,QByteArray,QByteArray)));
     //connect(this, SIGNAL(windowMove(int,int)), cwpMonitorForm, SLOT(onWindowMove(int,int)));
@@ -94,33 +98,40 @@ void MainWindow::onSwitchToCWP()
 void MainWindow::onSwitchToPhone()
 {
     qDebug() << tr("Switch to phone monitor...");
-    //ui->stackedWidget->setCurrentWidget(phoneMonitorForm);
+    ui->stackedWidget->setCurrentWidget(phoneMonitorForm);
 
+    /*
     // test onReportMainCardState and onReportUserCardState
-    char deviceId = 0x01;
+    char deviceId = 0x03;
     char slotIndex = 0x00;
     char state = 0x01;
     mscMonitorForm->onReportMainCardState(deviceId, slotIndex, state);
 
-    deviceId = 0x02;
+    deviceId = 0x04;
     slotIndex = 0x01;
     state = 0x01;
     mscMonitorForm->onReportMainCardState(deviceId, slotIndex, state);
 
     deviceId = 0x06;
-    for (char i = 2; i < 15; i++) {
+    for (char i = 3; i < 15; i++) {
         slotIndex = i;
         state = 0x01;
         char type = i % 9;
         mscMonitorForm->onReportUserCardState(deviceId, slotIndex, state, type);
+        if ((slotIndex == 0x08) || (slotIndex == 0x09))
+            mscMonitorForm->onReportMPUNetworkPortsState(0x01, 0x06, 0x01, 0x01);
+        else
+            mscMonitorForm->onReportUserCardPortState(0x00, deviceId, slotIndex, 0x01, 0x00);
     }
+    */
 }
 
 void MainWindow::onSwitchToRadio()
 {
     qDebug() << tr("Switch to radio monitor...");
-    //ui->stackedWidget->setCurrentWidget(radioMonitorForm);
+    ui->stackedWidget->setCurrentWidget(radioMonitorForm);
 
+    /*
     // test onReportDeviceInfo
     char deviceId[] = { 0x01, 0x02, 0x03, 0x04, 0x06};
     char deviceType[] = { 0x00, 0x00, 0x01, 0x01, 0x01 };
@@ -134,6 +145,7 @@ void MainWindow::onSwitchToRadio()
         QByteArray deviceName(name[i], sizeof(name[i]) / sizeof(name[i][0]));
         mscMonitorForm->onReportDeviceInfo(deviceId[i], deviceType[i], deviceName);
     }
+    */
 }
 
 void MainWindow::onConfigurateServerAddress()

@@ -21,6 +21,8 @@ signals:
                         const QByteArray &leftPhone, const QByteArray &rightPhone,
                         const QByteArray &userRoles);
     void reportDeviceInfo(char deviceId, char deviceType, const QByteArray &deviceName);
+    void reportMPUNetworkPortsState(char mpuIndex, char deviceId, char port1State, char port2State);
+    void reportUserCardPortState(char portId, char deviceId, char slotIndex, char state, char type);
 
 public slots:
     void onServerAddrChanged(const QString &svr1Ip, ushort svr1Port,

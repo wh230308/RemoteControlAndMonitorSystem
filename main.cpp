@@ -2,6 +2,7 @@
 
 #include "mainwindow.h"
 #include "log.hpp"
+#include "customcardlabel.h"
 
 int main(int argc, char *argv[])
 {

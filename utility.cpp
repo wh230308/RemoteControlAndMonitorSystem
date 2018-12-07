@@ -19,7 +19,6 @@ Utility::Utility()
 void Utility::fillLabelWithImage(QLabel *label, int width, int height, const QString &imagePath)
 {
     label->resize(width, height);
-    label->setMinimumSize(width, height);
 
     QImage image;
     image.load(imagePath);
