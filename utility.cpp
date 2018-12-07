@@ -5,15 +5,21 @@
 #include <QCoreApplication>
 #include <QSettings>
 
+#include <atomic>
+
 #define SVRS_ADDR_FILENAME ("ServersAddress.ini")
 #define SVR1_IP_KEY ("Server1/Ip")
 #define SVR1_PORT_KEY ("Server1/Port")
 #define SVR2_IP_KEY ("Server2/Ip")
 #define SVR2_PORT_KEY ("Server2/Port")
 
-Utility::Utility()
-{
 
+uint Utility::generateUniqueObjectId()
+{
+    static std::atomic<uint> uniqueObjectId{ 0 };
+    uniqueObjectId.fetch_add(1);
+
+    return uniqueObjectId;
 }
 
 void Utility::fillLabelWithImage(QLabel *label, int width, int height, const QString &imagePath)

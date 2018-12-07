@@ -9,7 +9,8 @@ class QString;
 class Utility
 {
 public:
-    Utility();
+
+    static uint generateUniqueObjectId();
 
     static void fillLabelWithImage(QLabel *label, int width, int height, const QString &imagePath);
     static void fillLabelWithImage(QLabel *label, const QString &imagePath);

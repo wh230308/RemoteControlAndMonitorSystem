@@ -29,7 +29,7 @@ public:
     };
 
 public:
-    CustomCardLabel(uint objectId, QWidget *parent = nullptr);
+    CustomCardLabel(QWidget *parent = nullptr);
 
     void updateCardTypeName(const QString &typeName);
     void updateRunningState(int state);
@@ -39,7 +39,10 @@ public:
     void flickerRunningStateLamp(int parity);
 
 private:
+    void initContentsLayout();
+    void addPortStateLayout(const QString &portTypeDesc, const QString &imgPath);
 
+private:
     QGridLayout *contenstLayout;
     QLabel *labelTypeName; // 板卡类型名：0x00 ASL; 0x01 ALT;...具体参见协议文档，MPU板无类型用0x7f标识
     QLabel *labelRunningStateLamp; // 运行状态灯

@@ -23,12 +23,16 @@ public:
     };
 
 public:
-    CustomLIULabel(uint objectId, const QString &liuName, QWidget *parent = nullptr);
+    CustomLIULabel(const QString &liuName, QWidget *parent = nullptr);
 
-public slots:
-    void onUpdateCardStateTimer();
     void updateCardRunningState(int slotIndex, int state, int type);
     void updateCardPortState(int slotIndex, int portId, int state, int type);
+
+private:
+    void initContentsLayout(const QString &liuName);
+
+private slots:
+    void onUpdateCardStateTimer();
 
 private:
     QGridLayout *contenstLayout;

@@ -17,29 +17,7 @@
 
 MSCMonitorForm::MSCMonitorForm(QWidget *parent) : QWidget(parent)
 {
-    auto topLevelLayout = new QHBoxLayout(this);
-    topLevelLayout->setObjectName(QStringLiteral("topLevelLayout"));
-    topLevelLayout->setContentsMargins(0, 0, 0, 0);
-
-    scrollArea = new QScrollArea(this);
-    scrollArea->setObjectName(QStringLiteral("scrollArea"));
-    scrollArea->setFrameShape(QFrame::NoFrame);
-    scrollArea->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-    topLevelLayout->addWidget(scrollArea);
-
-    scrollAreaWidgetContents = new QWidget();
-    scrollAreaWidgetContents->setObjectName(QStringLiteral("scrollAreaWidgetContents"));
-    scrollAreaWidgetContents->setGeometry(0, 0, scrollArea->width(), scrollArea->height());
-    scrollArea->setWidget(scrollAreaWidgetContents);
-
-    contentsLayout = new QHBoxLayout(scrollAreaWidgetContents);
-    contentsLayout->setObjectName(QStringLiteral("contentsLayout"));
-    contentsLayout->setContentsMargins(FormMargin, FormMargin, FormMargin, 0);
-    contentsLayout->setSpacing(0);
-
-    initSvrItemsLayout();
-    initNetworkBusLayout();
-    initLIUItemsLayout();
+    initFormContentsLayout();
 
     deviceStateTimer = new QTimer(this);
     connect(deviceStateTimer, SIGNAL(timeout()), this, SLOT(onUpdateDeviceStateTimer()));
@@ -115,46 +93,61 @@ void MSCMonitorForm::resizeEvent(QResizeEvent *event)
 
     formWidth = event->size().width();
     formHeight = event->size().height();
+    qDebug() << tr("Form size:(%1*%2)").arg(formWidth).arg(formHeight);
     checkChildWidgetsSizeToScroll(formWidth, formHeight);
 }
 
-void MSCMonitorForm::initSvrItemsLayout()
+void MSCMonitorForm::initFormContentsLayout()
 {
+    auto topLevelLayout = new QHBoxLayout(this);
+    topLevelLayout->setObjectName(QStringLiteral("topLevelLayout"));
+    topLevelLayout->setContentsMargins(0, 0, 0, 0);
+
+    scrollArea = new QScrollArea(this);
+    scrollArea->setObjectName(QStringLiteral("scrollArea"));
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setAlignment(Qt::AlignCenter);
+    topLevelLayout->addWidget(scrollArea);
+
+    scrollAreaWidgetContents = new QWidget();
+    scrollAreaWidgetContents->setObjectName(QStringLiteral("scrollAreaWidgetContents"));
+    scrollAreaWidgetContents->setGeometry(0, 0, scrollArea->width(), scrollArea->height());
+    scrollArea->setWidget(scrollAreaWidgetContents);
+
+    contentsLayout = new QHBoxLayout(scrollAreaWidgetContents);
+    contentsLayout->setObjectName(QStringLiteral("contentsLayout"));
+    contentsLayout->setContentsMargins(FormMargin, FormMargin, FormMargin, 0);
+    contentsLayout->setSpacing(0);
+
+    // svr布局
     svrItemsLayout = new QVBoxLayout();
     svrItemsLayout->setObjectName(QStringLiteral("svrItemsLayout"));
     svrItemsLayout->setContentsMargins(0, 0, 0, 0);
     svrItemsLayout->setSpacing(50);
-    contentsLayout->addLayout(svrItemsLayout);
-    contentsLayout->setStretch(0, 3);
+    contentsLayout->addLayout(svrItemsLayout, SvrHStretch);
 
-    auto svrTopSpacer = new QSpacerItem(10, 10, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    int topSpacerMinH = NetworkBusLabelHeight / 3 - (SvrLabelHeight / 2);
+    auto svrTopSpacer = new QSpacerItem(10, topSpacerMinH, QSizePolicy::Minimum, QSizePolicy::Minimum);
     svrItemsLayout->addSpacerItem(svrTopSpacer);
 
     auto svrBottomSpacer = new QSpacerItem(10, 10, QSizePolicy::Minimum, QSizePolicy::Expanding);
     svrItemsLayout->addSpacerItem(svrBottomSpacer);
-}
 
-void MSCMonitorForm::initNetworkBusLayout()
-{
+    // network bus布局
     networkBusItemsLayout = new QVBoxLayout();
     networkBusItemsLayout->setObjectName(QStringLiteral("networkBusItemsLayout"));
     networkBusItemsLayout->setContentsMargins(0, 0, 0, 0);
     networkBusItemsLayout->setSpacing(0);
-    networkBusItemsLayout->setDirection(QBoxLayout::BottomToTop);
-    contentsLayout->addLayout(networkBusItemsLayout);
-    contentsLayout->setStretch(0, 3);
+    contentsLayout->addLayout(networkBusItemsLayout, NetworkBusHStretch);
 
     addNetworkBusItem();
-}
 
-void MSCMonitorForm::initLIUItemsLayout()
-{
+    // LIU布局
     liuItemsLayout = new QVBoxLayout();
     liuItemsLayout->setObjectName(QStringLiteral("liuItemsLayout"));
     liuItemsLayout->setContentsMargins(0, 0, 0, 0);
     liuItemsLayout->setSpacing(LIUItemsSpace);
-    contentsLayout->addLayout(liuItemsLayout);
-    contentsLayout->setStretch(2, 20);
+    contentsLayout->addLayout(liuItemsLayout, LIUItemsHStretch);
 
     auto bottomSpacer = new QSpacerItem(10, 10, QSizePolicy::Minimum, QSizePolicy::Expanding);
     liuItemsLayout->addSpacerItem(bottomSpacer);
@@ -164,20 +157,18 @@ void MSCMonitorForm::addSvrItem(int deviceId, int deviceType, const QString &svr
 {
     Q_ASSERT((deviceType == 0x00) || (deviceType == 0x01));
 
-    static int objectId = 0;
-
     auto labelSvr = new QLabel(scrollAreaWidgetContents);
-    labelSvr->setObjectName(QString("labelSvr%1").arg(objectId));
+    labelSvr->setObjectName(QString("labelSvr%1").arg(Utility::generateUniqueObjectId()));
     Utility::fillLabelWithImage(labelSvr, SvrLabelWidth, SvrLabelHeight, QString(":/images/svr.gif"));
     svrItemsLayout->insertWidget(svrItemsLayout->count() - 1, labelSvr);
     svrItemsLayout->setAlignment(labelSvr, Qt::AlignHCenter | Qt::AlignTop);
 
     auto svrInnerLayout = new QVBoxLayout(labelSvr);
-    svrInnerLayout->setObjectName(QString("svrInnerLayout%1").arg(objectId));
+    svrInnerLayout->setObjectName(QString("svrInnerLayout%1").arg(Utility::generateUniqueObjectId()));
     svrInnerLayout->setContentsMargins(9, 9, 9, 3);
 
     auto labelSvrName = new QLabel(QString("<h2>%1</h2>").arg(svrName), labelSvr);
-    labelSvrName->setObjectName(QString("labelSvrName%1").arg(objectId));
+    labelSvrName->setObjectName(QString("labelSvrName%1").arg(Utility::generateUniqueObjectId()));
     svrInnerLayout->addWidget(labelSvrName);
     svrInnerLayout->setAlignment(labelSvrName, Qt::AlignHCenter | Qt::AlignBottom);
 
@@ -185,32 +176,24 @@ void MSCMonitorForm::addSvrItem(int deviceId, int deviceType, const QString &svr
     device->type = deviceType;
     device->deviceItem.svrItem = new SvrItem{ labelSvr, labelSvrName };
     deviceList.insert(deviceId, device);
-
-    objectId++;
-    liuItemCount++;
 }
 
 void MSCMonitorForm::addNetworkBusItem()
 {
-    static int objectId = 0;
-
     auto labelNetworkBus = new QLabel(scrollAreaWidgetContents);
-    labelNetworkBus->setObjectName(QString("labelNetworkBus%1").arg(objectId));
+    labelNetworkBus->setObjectName(QString("labelNetworkBus%1")
+                                   .arg(Utility::generateUniqueObjectId()));
     Utility::fillLabelWithImage(labelNetworkBus, NetworkBusLabelWidth, NetworkBusLabelHeight,
                                 QString(":/images/network_bus.gif"));
     networkBusItemsLayout->addWidget(labelNetworkBus);
     networkBusItemsLayout->setAlignment(labelNetworkBus, Qt::AlignHCenter | Qt::AlignTop);
-
-    objectId++;
 }
 
 void MSCMonitorForm::addLIUItem(int deviceId, int deviceType, const QString &liuItemName)
 {
     Q_ASSERT((deviceType == 0x00) || (deviceType == 0x01));
 
-    static uint objectId = 0;
-
-    auto liuItem = new CustomLIULabel(objectId, liuItemName, scrollAreaWidgetContents);
+    auto liuItem = new CustomLIULabel(liuItemName, scrollAreaWidgetContents);
     liuItemsLayout->insertWidget(liuItemsLayout->count() - 1, liuItem);
     liuItemsLayout->setAlignment(liuItem, Qt::AlignHCenter | Qt::AlignTop);
 
@@ -219,12 +202,12 @@ void MSCMonitorForm::addLIUItem(int deviceId, int deviceType, const QString &liu
         device->type = deviceType;
         device->deviceItem.liuItem = liuItem;
         deviceList.insert(deviceId, device);
+
+        liuItemCount++;
     } else {
         auto device = deviceList.value(deviceId);
         device->deviceItem.liuItem = liuItem;
     }
-
-    objectId++;
 }
 
 void MSCMonitorForm::checkChildWidgetsSizeToScroll(int formWidth, int formHeight)
@@ -241,6 +224,7 @@ void MSCMonitorForm::checkChildWidgetsSizeToScroll(int formWidth, int formHeight
         totalChildWidgetsHeight = FormMargin + LIULabelHeigth * liuItemCount
                 + LIUItemsSpace * (liuItemCount - 1);
 
+    qDebug() << "scrollAreaWidgetContents height:" << scrollAreaWidgetContents->height();
     if (totalChildWidgetsHeight > formHeight)
         scrollAreaWidgetContents->setMinimumHeight(totalChildWidgetsHeight);
 }

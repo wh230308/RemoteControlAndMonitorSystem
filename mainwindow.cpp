@@ -141,7 +141,7 @@ void MainWindow::onSwitchToRadio()
                             { '2', '3', '2', '-', '2', '3', '3' },
                             { '2', '3', '4', '-', '2', '3', '5' } };
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 1; i++) {
         QByteArray deviceName(name[i], sizeof(name[i]) / sizeof(name[i][0]));
         mscMonitorForm->onReportDeviceInfo(deviceId[i], deviceType[i], deviceName);
     }

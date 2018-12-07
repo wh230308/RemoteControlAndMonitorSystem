@@ -18,21 +18,21 @@ class MSCMonitorForm : public QWidget
 
 enum
 {
-    DefaultSvrItemsNumber = 2,
-    DefaultLIUItemsNumber = 3,
-    CardNumberPerLIUItem = 18,
-
     FormDefaultWidth = 1440,
-    FormDefaultHeight = 900,
+    FormDefaultHeight = 758,
+    FormMargin = 20,
 
     SvrLabelWidth = 165,
     SvrLabelHeight = 165,
+    SvrHStretch = 3,
+    NetworkBusLabelWidth = 110,
+    NetworkBusLabelHeight = FormDefaultHeight - FormMargin,
+    NetworkBusHStretch = 2,
     LIULabelWidth = 1126,
     LIULabelHeigth = 220,
-    NetworkBusLabelWidth = 110,
-    NetworkBusLabelHeight = LIULabelHeigth * 3 + LIULabelHeigth / 2,
-    FormMargin = 20,
+    LIUItemsHStretch = 20,
     LIUItemsSpace = 25,
+    DefaultLIUItemsNumber = 3,
 
     DeviceStateTimerInterval = 500 // 设备状态更新定时器
 };
@@ -95,9 +95,7 @@ protected:
     void resizeEvent(QResizeEvent *event);
 
 private:
-    void initSvrItemsLayout();
-    void initNetworkBusLayout();
-    void initLIUItemsLayout();
+    void initFormContentsLayout();
 
     void addSvrItem(int deviceId, int deviceType, const QString &svrName);
     void addNetworkBusItem();
