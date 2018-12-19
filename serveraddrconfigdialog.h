@@ -16,7 +16,7 @@ public:
     ~ServerAddrConfigDialog();
 
 signals:
-    void serverAddrChanged(const QString &svr1Ip, ushort svr1Port,
+    void serversAddrChanged(const QString &svr1Ip, ushort svr1Port,
                              const QString &svr2Ip, ushort svr2Port);
 
 private slots:

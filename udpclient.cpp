@@ -161,13 +161,13 @@ void UdpClient::processTheDatagram(const QNetworkDatagram &datagram)
 }
 
 void UdpClient::processHeartbeatPkt(const QByteArray &byteArray)
-{
+{  
+    heartbeatPktCount--;
+
     if ((0x5a == static_cast<uchar>(byteArray.at(1)))
             && (0xaa == static_cast<uchar>(byteArray.at(2)))
             && (0x5a == static_cast<uchar>(byteArray.at(3)))
             && (0xaa == static_cast<uchar>(byteArray.at(4)))) {
-        heartbeatPktCount--;
-
         if (isFirstHeartbeatPkt) {
             isFirstHeartbeatPkt = false;
             const char queryStates[] = { 0x5e, 0x01, 0x02, 0x03, 0x04 };

@@ -1,6 +1,7 @@
 #include "customcardlabel.h"
 
 #include <QGridLayout>
+#include <QDebug>
 
 #include "utility.h"
 
@@ -19,64 +20,63 @@ static const QStringList portTyepDescList = {
     QObject::tr("EM4")
 };
 
-CustomCardLabel::CustomCardLabel(QWidget *parent) : QLabel(parent)
+static const QString cardImagePath(":/images/card.gif");
+static const QString stateLampOffImgPath(":/images/lamp_off.gif");
+static const QString stateLampRunningImgPath(":/images/lamp_running.gif");
+
+CustomCardLabel::CustomCardLabel(QWidget *parent, bool isMPUCard)
+    : QLabel(parent)
+    , isMPUCard_(isMPUCard)
 {
     initContentsLayout();
 }
 
 void CustomCardLabel::updateCardTypeName(const QString &typeName)
 {
-    labelTypeName->setText(tr("<b>%1</b>").arg(typeName));
+    labelTypeName_->setText(tr("<b>%1</b>").arg(typeName));
 }
 
 void CustomCardLabel::updateRunningState(int state)
 {
     Q_ASSERT((state == 0x00) || (state == 0x01));
 
-    runningState = state;
+    runningState_ = state;
     if (state == 0x00)
-        labelRunningStateLamp->setPixmap(QPixmap(":/images/lamp_off.gif"));
+        labelRunningStateLamp_->setPixmap(QPixmap(stateLampOffImgPath));
     else
-        labelRunningStateLamp->setPixmap(QPixmap(":/images/lamp_running.gif"));
+        labelRunningStateLamp_->setPixmap(QPixmap(stateLampRunningImgPath));
 }
 
-void CustomCardLabel::updatePortState(int portId, int state, int type, bool isMPUCard)
+void CustomCardLabel::updatePortState(int portId, int state, int type)
 {
     Q_ASSERT(portId >= 0);
-    Q_ASSERT(portId <= MaximumPortId);
+    Q_ASSERT(portId <= kMaximumPortId);
     Q_ASSERT((state == 0x00) || (state == 0x01));
     Q_ASSERT(type >= 0);
-    Q_ASSERT(type <= cardPortList.size());
+    Q_ASSERT(type <= cardPortList_.size());
 
     QString imgPath;
     if (state == 0x00)
-        imgPath = ":/images/lamp_off.gif";
+        imgPath = stateLampOffImgPath;
     else
-        imgPath = ":/images/lamp_running.gif";
+        imgPath = stateLampRunningImgPath;
 
-    QString portTypeDesc;
-    if (isMPUCard)
-        portTypeDesc = tr("<b>%1</b>").arg(portId);
-    else
-        portTypeDesc = tr("<b>%1</b>").arg(portTyepDescList.at(type));
-
-    if (portId < cardPortList.size()) {
-        // 已存在的板卡端口
-        cardPortList.at(portId)->labelStateLamp->setPixmap(QPixmap(imgPath));
-        cardPortList.at(portId)->labelTypeDesc->setText(portTypeDesc);
-    }
-    else {
+    if (!cardPortList_.contains(portId)) {
         // 新增板卡端口
-        addPortStateLayout(portTypeDesc, imgPath);
+        addPortStateLayout(portId, imgPath);
+    } else {
+        // 已存在的板卡端口
+        cardPortList_.value(portId)->labelStateLamp->setPixmap(QPixmap(imgPath));
+        cardPortList_.value(portId)->labelTypeDesc->setText(tr("<b>%1</b>").arg(portId));
     }
 }
 
 void CustomCardLabel::flickerRunningStateLamp(int parity)
 {
     if ((parity % 2) == 0x00)
-        labelRunningStateLamp->setPixmap(QPixmap(":/images/lamp_off.gif"));
+        labelRunningStateLamp_->setPixmap(QPixmap(stateLampOffImgPath));
     else
-        labelRunningStateLamp->setPixmap(QPixmap(":/images/lamp_running.gif"));
+        labelRunningStateLamp_->setPixmap(QPixmap(stateLampRunningImgPath));
 }
 
 void CustomCardLabel::initContentsLayout()
@@ -84,75 +84,81 @@ void CustomCardLabel::initContentsLayout()
     if (objectName().isEmpty())
         setObjectName(QString("customCardLabel%1").arg(Utility::generateUniqueObjectId()));
 
-    Utility::fillLabelWithImage(this, CardLabelWidth, CardLabelHeight, QString(":/images/card.gif"));
+    Utility::fillLabelWithImage(this, kCardLabelWidth, kCardLabelHeight, cardImagePath);
     setAlignment(Qt::AlignCenter);
     setVisible(false); // 板卡默认不显示，当服务器有上报该板卡状态时显示
 
-    contenstLayout = new QGridLayout(this);
-    contenstLayout->setObjectName(QString("contenstLayout%1").arg(Utility::generateUniqueObjectId()));
-    contenstLayout->setHorizontalSpacing(1);
-    contenstLayout->setVerticalSpacing(0);
+    contenstLayout_ = new QGridLayout(this);
+    contenstLayout_->setObjectName(QString("contenstLayout%1").arg(Utility::generateUniqueObjectId()));
+    contenstLayout_->setHorizontalSpacing(1);
+    contenstLayout_->setVerticalSpacing(0);
 
     // 板卡类型名称描述
-    labelTypeName = new QLabel(this);
-    labelTypeName->setObjectName(QString("labelTypeName%1").arg(Utility::generateUniqueObjectId()));
-    labelTypeName->setAlignment(Qt::AlignCenter);
-    contenstLayout->addWidget(labelTypeName, 1, 1, 1, 2, Qt::AlignHCenter | Qt::AlignBottom);
+    labelTypeName_ = new QLabel(this);
+    labelTypeName_->setObjectName(QString("labelTypeName%1").arg(Utility::generateUniqueObjectId()));
+    labelTypeName_->setAlignment(Qt::AlignCenter);
+    contenstLayout_->addWidget(labelTypeName_, 1, 1, 1, 2, Qt::AlignHCenter | Qt::AlignBottom);
 
 
     // 板卡运行状态灯及其描述
-    labelRunningStateLamp = new QLabel(this);
-    labelRunningStateLamp->setObjectName(QString("labelRunningStateLamp%1")
+    labelRunningStateLamp_ = new QLabel(this);
+    labelRunningStateLamp_->setObjectName(QString("labelRunningStateLamp%1")
                                          .arg(Utility::generateUniqueObjectId()));
-    labelRunningStateLamp->setAlignment(Qt::AlignCenter);
-    Utility::fillLabelWithImage(labelRunningStateLamp, CardStateLampLabelWidth,
-                                CardStateLampLabelHeight, QString(":/images/lamp_off.gif"));
-    contenstLayout->addWidget(labelRunningStateLamp, 2, 1, Qt::AlignHCenter | Qt::AlignVCenter);
+    labelRunningStateLamp_->setAlignment(Qt::AlignCenter);
+    Utility::fillLabelWithImage(labelRunningStateLamp_, kCardStateLampLabelWidth,
+                                kCardStateLampLabelHeight, stateLampOffImgPath);
+    contenstLayout_->addWidget(labelRunningStateLamp_, 2, 1, Qt::AlignHCenter | Qt::AlignBottom);
 
-    labelRunningStateDesc = new QLabel(tr("<b>Run</b>"), this);
+    auto labelRunningStateDesc = new QLabel(tr("<b>Run</b>"), this);
     labelRunningStateDesc->setObjectName(QString("cardRunningStateDesc%1")
                                          .arg(Utility::generateUniqueObjectId()));
     labelRunningStateDesc->setAlignment(Qt::AlignCenter);
     labelRunningStateDesc->setFont(QFont(QString("Microsoft YaHei"), 6, 1));
-    contenstLayout->addWidget(labelRunningStateDesc, 2, 2, Qt::AlignHCenter | Qt::AlignVCenter);
+    contenstLayout_->addWidget(labelRunningStateDesc, 2, 2, Qt::AlignHCenter | Qt::AlignBottom);
 
-    // 布局行数动态增加
-    contenstLayout->setRowStretch(0, 36);
-    contenstLayout->setRowStretch(1, 20);
-    contenstLayout->setRowStretch(2, 20);
-    contenstLayout->setRowStretch(3, 102);
+    // GridLayout默认4行，第1行第4行留白，第2行展示板卡类型，第3行展示运行状态灯及其描述
+    contenstLayout_->setRowStretch(0, kCardContentRowMargin);
+    contenstLayout_->setRowStretch(1, kCardContentRowHeight);
+    contenstLayout_->setRowStretch(2, kCardContentRowHeight);
+    contenstLayout_->setRowStretch(3, kCardLabelHeight - kCardContentRowMargin
+                                   - kCardContentRowHeight * 2);
 
-    // 布局为4列，第1列第4列留白，第2列第3列布置状态灯及其描述
-    contenstLayout->setColumnStretch(0, 8);
-    contenstLayout->setColumnStretch(1, 17);
-    contenstLayout->setColumnStretch(2, 18);
-    contenstLayout->setColumnStretch(3, 8);
+    // GridLayout共4列，第1列第4列留白，第2列第3列布置状态灯及其描述
+    contenstLayout_->setColumnStretch(0, kCardContentColumnMargin);
+    contenstLayout_->setColumnStretch(1, kCardContentLeftColumnWidth);
+    contenstLayout_->setColumnStretch(2, kCardContentRightColumnWidth);
+    contenstLayout_->setColumnStretch(3, kCardContentColumnMargin);
+
+    if (!isMPUCard_) {
+        addPortStateLayout(0, stateLampOffImgPath);
+        addPortStateLayout(1, stateLampOffImgPath);
+    }
 }
 
-void CustomCardLabel::addPortStateLayout(const QString &portTypeDesc, const QString &imgPath)
+void CustomCardLabel::addPortStateLayout(int portId, const QString &imgPath)
 {
-    int rowIndex = contenstLayout->rowCount() - 1; // 最后一行是空白行，因此添加新行时要使用该行
+    int lastRowIndex = contenstLayout_->rowCount() - 1;
+    int lastRowStretch = contenstLayout_->rowStretch(lastRowIndex);
 
-    auto labelTypeDesc = new QLabel(portTypeDesc, this);
+    // 端口状态描述
+    auto labelTypeDesc = new QLabel(tr("<b>%1</b>").arg(portId + 1), this);
     labelTypeDesc->setObjectName(QString("labelTypeDesc%1")
                                  .arg(Utility::generateUniqueObjectId()));
     labelTypeDesc->setAlignment(Qt::AlignCenter);
     labelTypeDesc->setFont(QFont(QString("Microsoft YaHei"), 6));
-    contenstLayout->addWidget(labelTypeDesc, rowIndex, 1, Qt::AlignHCenter | Qt::AlignVCenter);
+    contenstLayout_->addWidget(labelTypeDesc, lastRowIndex, 1, Qt::AlignHCenter | Qt::AlignBottom);
 
+    // 端口状态灯
     auto labelStateLamp = new QLabel(this);
     labelStateLamp->setObjectName(QString("labelStateLamp%1")
                                   .arg(Utility::generateUniqueObjectId()));
     labelStateLamp->setAlignment(Qt::AlignCenter);
-    Utility::fillLabelWithImage(labelStateLamp, CardStateLampLabelWidth, CardStateLampLabelHeight,
+    Utility::fillLabelWithImage(labelStateLamp, kCardStateLampLabelWidth, kCardStateLampLabelHeight,
                                 imgPath);
-    contenstLayout->addWidget(labelStateLamp, rowIndex, 2, Qt::AlignHCenter | Qt::AlignVCenter);
+    contenstLayout_->addWidget(labelStateLamp, lastRowIndex, 2, Qt::AlignHCenter | Qt::AlignBottom);
 
-    contenstLayout->setRowStretch(rowIndex, 16);
-    int totalRowStretch = 0;
-    for (int i = 0; i < contenstLayout->rowCount(); i++)
-        totalRowStretch += contenstLayout->rowStretch(i);
-    contenstLayout->setRowStretch(rowIndex + 1, CardLabelHeight - totalRowStretch);
+    contenstLayout_->setRowStretch(lastRowIndex, kCardContentRowHeight);
+    contenstLayout_->setRowStretch(lastRowIndex + 1, lastRowStretch - kCardContentRowHeight);
 
-    cardPortList.push_back(new CardPort{ labelTypeDesc, labelStateLamp });
+    cardPortList_.insert(portId, new CardPort{ labelTypeDesc, labelStateLamp });
 }

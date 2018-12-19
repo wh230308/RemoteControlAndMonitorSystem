@@ -53,6 +53,10 @@ void MSCMonitorForm::onReportUserCardState(char deviceId, char slotIndex, char s
     LOG_TRACE("user card state changed, deviceId:%d, slotIndex:%d, state:%d, type:%d",
               deviceId, slotIndex, state, type);
 
+    // 界面布局板卡时，主控板和用户板排成一排，共18个槽位，主控板占据第8、9槽位，其余槽位由用户板占用。
+    // 而上报的用户板槽位号是从0~15，因此用户板槽位号大于8时往右偏移2个位置
+    if (slotIndex > 0x08)
+        slotIndex += 0x02;
     updateCardRunningState(deviceId, slotIndex, state, type);
 }
 
@@ -60,6 +64,9 @@ void MSCMonitorForm::onReportDeviceInfo(char deviceId, char deviceType, const QB
 {
     LOG_TRACE("report the device info, deviceId:%d, deviceType:%d, deviceName:%s",
               deviceId, deviceType, deviceName.constData());
+
+    if (deviceList.contains(deviceId))
+        return;
 
     if (deviceType == 0) {
         addSvrItem(deviceId, deviceType, QString::fromUtf8(deviceName));
@@ -232,7 +239,7 @@ void MSCMonitorForm::checkChildWidgetsSizeToScroll(int formWidth, int formHeight
 void MSCMonitorForm::updateCardRunningState(int deviceId, int slotIndex, int state, int type)
 {
     Q_ASSERT(slotIndex >= 00);
-    Q_ASSERT(slotIndex <= CustomLIULabel::CardNumberPerLIU);
+    Q_ASSERT(slotIndex <= CustomLIULabel::kCardNumberPerLIU);
     Q_ASSERT((state == 0x00) || (state == 0x01));
     Q_ASSERT(type >= 0x00);
     Q_ASSERT(type <= 0x10);
@@ -240,7 +247,7 @@ void MSCMonitorForm::updateCardRunningState(int deviceId, int slotIndex, int sta
     int key = (deviceId << 16) | slotIndex;
     if (!deviceStateList.contains(key)) {
         deviceStateList.insert(key, new DeviceState{ true, deviceId, slotIndex, state, type,
-                                                     QVector<DeviceState::PortState *>() });
+                                                     QMap<int, DeviceState::PortState *>() });
     } else {
         auto deviceState = deviceStateList.value(key);
         deviceState->runningState = state;
@@ -269,17 +276,17 @@ void MSCMonitorForm::updateMPUNetworkPortsState(int mpuIndex, int deviceId, int 
 
     auto deviceState = deviceStateList.value(key);
     deviceState->isStateChanged = true;
-    deviceState->portStateList.push_back(new DeviceState::PortState{ 0x00, port1State });
-    deviceState->portStateList.push_back(new DeviceState::PortState{ 0x00, port2State });
+    deviceState->portStateList.insert(0, new DeviceState::PortState{ 0x00, port1State });
+    deviceState->portStateList.insert(1, new DeviceState::PortState{ 0x00, port2State });
 }
 
 void MSCMonitorForm::updateUserCardPortState(int portId, int deviceId, int slotIndex, int state,
                                              int type)
 {
     Q_ASSERT(portId >= 0);
-    Q_ASSERT(portId <= CustomCardLabel::MaximumPortId);
+    Q_ASSERT(portId <= CustomCardLabel::kMaximumPortId);
     Q_ASSERT(slotIndex >= 00);
-    Q_ASSERT(slotIndex <= CustomLIULabel::CardNumberPerLIU);
+    Q_ASSERT(slotIndex <= CustomLIULabel::kCardNumberPerLIU);
     Q_ASSERT((state == 0x00) || (state == 0x01));
     Q_ASSERT(type >= 0x00);
     Q_ASSERT(type <= 0x0a);
@@ -292,10 +299,11 @@ void MSCMonitorForm::updateUserCardPortState(int portId, int deviceId, int slotI
     }
 
     auto deviceState = deviceStateList.value(key);
-    if (portId >= deviceState->portStateList.size()) {
-        deviceState->portStateList.push_back(new DeviceState::PortState{ type, state });
+    deviceState->isStateChanged = true;
+    if (!deviceState->portStateList.contains(portId)) {
+        deviceState->portStateList.insert(portId, new DeviceState::PortState{ type, state });
     } else {
-        auto portState = deviceState->portStateList.at(portId);
+        auto portState = deviceState->portStateList.value(portId);
         portState->type = type;
         portState->state = state;
     }
@@ -313,10 +321,10 @@ void MSCMonitorForm::onUpdateDeviceStateTimer()
                     item->isStateChanged = false;
                     liuItem->updateCardRunningState(item->slotIndex, item->runningState,
                                                     item->cardType);
-                    for (int i = 0; i < item->portStateList.size(); i++) {
-                        auto portState = item->portStateList.at(i);
-                        liuItem->updateCardPortState(item->slotIndex, i, portState->state,
-                                                     portState->type);
+                    auto iter = item->portStateList.constBegin();
+                    for (; iter != item->portStateList.constEnd(); iter++) {
+                        liuItem->updateCardPortState(item->slotIndex, iter.key(),
+                                                     iter.value()->state, iter.value()->type);
                     }
                 }
             }

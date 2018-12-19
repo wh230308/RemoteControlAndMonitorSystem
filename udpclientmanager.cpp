@@ -10,7 +10,7 @@ UdpClientManager::UdpClientManager(QObject *parent) : QObject(parent)
     ushort svrPortList[2];
     Utility::loadServerAddrConfig(svrIpList[0], svrPortList[0], svrIpList[1], svrPortList[1]);
 
-    for (int i = 0; i < 0; i++) {
+    for (int i = 0; i < 2; i++) {
         auto client = new UdpClient;
         connect(client, SIGNAL(heartbeatTimeout()), this, SIGNAL(heartbeatTimeout()));
         connect(client, SIGNAL(reportMainCardState(char,char,char)),

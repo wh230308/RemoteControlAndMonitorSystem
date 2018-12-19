@@ -58,7 +58,7 @@ void ServerAddrConfigDialog::onSaveConfig()
     setting.setValue(SVR2_IP_KEY, ui->lineEditSvr2Addr->text());
     setting.setValue(SVR2_PORT_KEY, ui->lineEditSvr2Port->text());
 
-    emit serverAddrChanged(svr1Addr, svr1port.toUShort(), svr2Addr, svr2port.toUShort());
+    emit serversAddrChanged(svr1Addr, svr1port.toUShort(), svr2Addr, svr2port.toUShort());
 
     close();
 }

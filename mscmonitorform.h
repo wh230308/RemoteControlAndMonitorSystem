@@ -34,7 +34,7 @@ enum
     LIUItemsSpace = 25,
     DefaultLIUItemsNumber = 3,
 
-    DeviceStateTimerInterval = 500 // 设备状态更新定时器
+    DeviceStateTimerInterval = 1000 // 设备状态更新定时器
 };
 
 struct SvrItem
@@ -60,7 +60,7 @@ struct DeviceState
 
     // 端口状态列表，当设备为LIU-MPU板时，表示网口1和网口2状态；
     // 当设备为LIU用户板时表示各种类型端口
-    QVector<PortState *> portStateList;
+    QMap<int, PortState *> portStateList;
 };
 
 struct Device

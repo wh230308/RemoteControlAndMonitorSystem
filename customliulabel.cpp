@@ -33,19 +33,19 @@ CustomLIULabel::CustomLIULabel(const QString &liuName, QWidget *parent)
 {
     initContentsLayout(liuName);
 
-    cardStateTimer = new QTimer(this);
-    connect(cardStateTimer, SIGNAL(timeout()), this, SLOT(onUpdateCardStateTimer()));
-    cardStateTimer->start(500);
+    cardStateTimer_ = new QTimer(this);
+    connect(cardStateTimer_, SIGNAL(timeout()), this, SLOT(onUpdateCardStateTimer()));
+    cardStateTimer_->start(kCardStateTimerInterval);
 }
 
 void CustomLIULabel::updateCardRunningState(int slotIndex, int state, int type)
 {
     Q_ASSERT(slotIndex >= 0);
-    Q_ASSERT(slotIndex < CardNumberPerLIU);
+    Q_ASSERT(slotIndex < kCardNumberPerLIU);
     Q_ASSERT(type >= 0);
     Q_ASSERT(type < cardTyepDescList.size());
 
-    auto liuCard = liuCardList.at(slotIndex);
+    auto liuCard = liuCardList_.at(slotIndex);
     if (!liuCard->isVisible())
         liuCard->setVisible(true);
 
@@ -58,18 +58,17 @@ void CustomLIULabel::updateCardRunningState(int slotIndex, int state, int type)
 void CustomLIULabel::updateCardPortState(int slotIndex, int portId, int state, int type)
 {
     Q_ASSERT(slotIndex >= 0);
-    Q_ASSERT(slotIndex < CardNumberPerLIU);
+    Q_ASSERT(slotIndex < kCardNumberPerLIU);
     Q_ASSERT(portId >= 0);
-    Q_ASSERT(portId < CustomCardLabel::MaximumPortId);
+    Q_ASSERT(portId < CustomCardLabel::kMaximumPortId);
     Q_ASSERT(type >= 0);
     Q_ASSERT(type < 11);
 
-    auto liuCard = liuCardList.at(slotIndex);
+    auto liuCard = liuCardList_.at(slotIndex);
     if (!liuCard->isVisible())
         liuCard->setVisible(true);
 
-    bool isMPUCard = ((slotIndex == 0x08) || (slotIndex == 0x09)) ? true : false;
-    liuCard->updatePortState(portId, state, type, isMPUCard);
+    liuCard->updatePortState(portId, state, type);
 }
 
 void CustomLIULabel::initContentsLayout(const QString &liuName)
@@ -77,45 +76,53 @@ void CustomLIULabel::initContentsLayout(const QString &liuName)
     if (objectName().isEmpty())
         setObjectName(QString("customLIULabel%1").arg(Utility::generateUniqueObjectId()));
 
-    Utility::fillLabelWithImage(this, LIULabelWidth, LIULabelHeigth, QString(":/images/liu_item.gif"));
+    Utility::fillLabelWithImage(this, kLIULabelWidth, kLIULabelHeigth, QString(":/images/liu_item.gif"));
     setAlignment(Qt::AlignCenter);
 
-    contenstLayout = new QGridLayout(this);
-    contenstLayout->setObjectName(QString("contenstLayout%1").arg(Utility::generateUniqueObjectId()));
-    contenstLayout->setHorizontalSpacing(1);
-    contenstLayout->setVerticalSpacing(0);
+    contenstLayout_ = new QGridLayout(this);
+    contenstLayout_->setObjectName(QString("contenstLayout%1").arg(Utility::generateUniqueObjectId()));
+    contenstLayout_->setHorizontalSpacing(1);
+    contenstLayout_->setVerticalSpacing(0);
 
-    // 板卡类型名称描述
-    labelLIUName = new QLabel(tr("<b>Frame:%1</b>").arg(liuName), this);
-    labelLIUName->setObjectName(QString("labelLIUName%1").arg(Utility::generateUniqueObjectId()));
-    labelLIUName->setAlignment(Qt::AlignCenter);
-    contenstLayout->addWidget(labelLIUName, 0, 0, 2, 1, Qt::AlignCenter);
-    contenstLayout->setColumnStretch(0, 190);
+    // LIU名称描述
+    labelLIUName_ = new QLabel(tr("<b>Frame:%1</b>").arg(liuName), this);
+    labelLIUName_->setObjectName(QString("labelLIUName%1").arg(Utility::generateUniqueObjectId()));
+    labelLIUName_->setAlignment(Qt::AlignCenter);
+    contenstLayout_->addWidget(labelLIUName_, 0, 0, 2, 1, Qt::AlignCenter);
+    contenstLayout_->setColumnStretch(0, kLIUContentNameColumnWidth);
 
     // 板卡及其对应槽位号
-    for (int i = 0; i < CardNumberPerLIU; i++) {
-        auto labelCardSlotIndex = new QLabel(tr("<b>%1</b>").arg(i + 1), this);
+    int index = 0;
+    for (int i = 0; i < kCardNumberPerLIU; i++) {
+        bool isMPUCard = true;
+        QString cardSlotIndexDesc;
+        if ((i != 8) && (i != 9)) {
+            cardSlotIndexDesc = tr("<b>P%1</b>").arg(++index);
+            isMPUCard = false;
+        }
+
+        auto labelCardSlotIndex = new QLabel(cardSlotIndexDesc, this);
         labelCardSlotIndex->setObjectName(QString("labelCardSlotIndex%1")
                                           .arg(Utility::generateUniqueObjectId()));
         labelCardSlotIndex->setAlignment(Qt::AlignCenter);
-        contenstLayout->addWidget(labelCardSlotIndex, 0, i + 1, Qt::AlignCenter);
+        contenstLayout_->addWidget(labelCardSlotIndex, 0, i + 1, Qt::AlignCenter);
 
-        auto liuCard = new CustomCardLabel(this);
-        contenstLayout->addWidget(liuCard, 1, i + 1, Qt::AlignCenter);
-        contenstLayout->setColumnStretch(i + 1, 52);
+        auto liuCard = new CustomCardLabel(this, isMPUCard);
+        contenstLayout_->addWidget(liuCard, 1, i + 1, Qt::AlignCenter);
+        contenstLayout_->setColumnStretch(i + 1, kLIUContentCardColumnWidth);
 
-        liuCardList.push_back(liuCard);
+        liuCardList_.push_back(liuCard);
     }
 
-    contenstLayout->setRowStretch(0, 22);
-    contenstLayout->setRowStretch(1, 178);
+    contenstLayout_->setRowStretch(0, kLIUContentFirstRowHeight);
+    contenstLayout_->setRowStretch(1, kLIUContentLastRowHeight);
 }
 
 void CustomLIULabel::onUpdateCardStateTimer()
 {
     static int parity = 0;
 
-    foreach (auto item, liuCardList) {
+    foreach (auto item, liuCardList_) {
         if (item->isCardRunning()) {
             item->flickerRunningStateLamp(parity);
         }

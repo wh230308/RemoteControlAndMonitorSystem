@@ -16,10 +16,17 @@ class CustomLIULabel : public QLabel
 public:
     enum
     {
-        CardNumberPerLIU = 18,
-        LIULabelWidth = 1126,
-        LIULabelHeigth = 220,
-        LIUItemsSpace = 25,
+        kCardNumberPerLIU = 18,
+        kLIULabelWidth = 1126,
+        kLIULabelHeigth = 220,
+        kLIUItemsSpace = 25,
+
+        kLIUContentFirstRowHeight = 22,
+        kLIUContentLastRowHeight = 178,
+        kLIUContentNameColumnWidth = 190,
+        kLIUContentCardColumnWidth = 52,
+
+        kCardStateTimerInterval = 500 // 板卡状态更新定时器
     };
 
 public:
@@ -35,11 +42,11 @@ private slots:
     void onUpdateCardStateTimer();
 
 private:
-    QGridLayout *contenstLayout;
-    QLabel *labelLIUName;
-    QVector<CustomCardLabel *> liuCardList;
+    QGridLayout *contenstLayout_;
+    QLabel *labelLIUName_;
+    QVector<CustomCardLabel *> liuCardList_;
 
-    QTimer *cardStateTimer;
+    QTimer *cardStateTimer_;
 };
 
 #endif // CUSTOMLIULABEL_H
