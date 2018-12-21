@@ -319,13 +319,15 @@ void MSCMonitorForm::onUpdateDeviceStateTimer()
                 auto liuItem = device->deviceItem.liuItem;
                 if (item->isStateChanged) {
                     item->isStateChanged = false;
-                    liuItem->updateCardRunningState(item->slotIndex, item->runningState,
+                    liuItem->updateCardStateInfo(item->slotIndex, item->runningState,
                                                     item->cardType);
+                    /*
                     auto iter = item->portStateList.constBegin();
                     for (; iter != item->portStateList.constEnd(); iter++) {
                         liuItem->updateCardPortState(item->slotIndex, iter.key(),
                                                      iter.value()->state, iter.value()->type);
                     }
+                    */
                 }
             }
         }

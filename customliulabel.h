@@ -32,8 +32,9 @@ public:
 public:
     CustomLIULabel(const QString &liuName, QWidget *parent = nullptr);
 
-    void updateCardRunningState(int slotIndex, int state, int type);
+    void updateCardStateInfo(int slotIndex, int runningState, int cardType);
     void updateCardPortState(int slotIndex, int portId, int state, int type);
+    void updateCardEthPortsState(int mpuFlag, int port1State, int port2State);
 
 private:
     void initContentsLayout(const QString &liuName);
@@ -42,9 +43,9 @@ private slots:
     void onUpdateCardStateTimer();
 
 private:
-    QGridLayout *contenstLayout_;
-    QLabel *labelLIUName_;
-    QVector<CustomCardLabel *> liuCardList_;
+    QGridLayout *layoutContents_;
+    QLabel *lblLIUName_;
+    QVector<CustomCardLabel *> vecLIUCards_;
 
     QTimer *cardStateTimer_;
 };

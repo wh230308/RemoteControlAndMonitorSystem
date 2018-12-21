@@ -31,8 +31,8 @@ public:
 
     struct CardPort
     {
-        QLabel *labelTypeDesc; // 端口类型描述, 0x00 ASL; 0x01 ALT;...具体参见协议文档
-        QLabel *labelStateLamp; // 端口状态灯
+        QLabel *lblTypeDesc; // 端口类型描述, 0x00 ASL; 0x01 ALT;...具体参见协议文档
+        QLabel *lblStateLamp; // 端口状态灯
     };
 
 public:
@@ -40,7 +40,8 @@ public:
 
     void updateCardTypeName(const QString &typeName);
     void updateRunningState(int state);
-    void updatePortState(int portId, int state, int type);
+    void updatePortState(int portId, int state, int type); // 更新端口状态，仅用户板
+    void updateEthPortsState(int port1State, int port2State); // 更新网口状态，仅主控板
 
     bool isCardRunning() const { return runningState_ == 0x01; }
     void flickerRunningStateLamp(int parity);
@@ -51,14 +52,12 @@ private:
 
 private:
     bool isMPUCard_;
-    QGridLayout *contenstLayout_;
-    QLabel *labelTypeName_; // 板卡类型名：0x00 ASL; 0x01 ALT;...具体参见协议文档，MPU板无类型用0x7f标识
-    QLabel *labelRunningStateLamp_; // 运行状态灯
+    QGridLayout *layoutContents_;
+    QLabel *lblTypeName_; // 板卡类型名：0x00 ASL; 0x01 ALT;...具体参见协议文档，MPU板无类型用0x7f标识
+    QLabel *lblRunningStateLamp_; // 运行状态灯
 
-    // 板卡面板端口列表，当板卡为MPU板时，只有2个端口，表示MPU板网口1和2
-    // 当板卡为用户板时，最多有256个端口，分别表示各类型端口，如"ASL"、"ALT"、"EM"...
-    QMap<int, CardPort *> cardPortList_;
-
+    // 用户板端口，最多有256个端口，默认显示2个
+    QMap<int, CardPort *> mapCardPorts_;
     int runningState_; // 板卡运行状态：0离线；1在线
 };
 
