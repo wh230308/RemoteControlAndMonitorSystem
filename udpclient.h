@@ -32,14 +32,14 @@ public:
 
 signals:
     void heartbeatTimeout();
-    void reportMainCardState(char deviceId, char slotIndex, char state);
-    void reportUserCardState(char deviceId, char slotIndex, char state, char type);
+    void reportMainCardState(char deviceId, char mpuFlag, char state);
+    void reportUserCardState(char deviceId, char slotIndex, char type, char state);
     void reportCWPState(char seatId, char seatState, const QByteArray &userName,
                         const QByteArray &leftPhone, const QByteArray &rightPhone,
                         const QByteArray &userRoles);
     void reportDeviceInfo(char deviceId, char deviceType, const QByteArray &deviceName);
-    void reportMPUNetworkPortsState(char mpuIndex, char deviceId, char port1State, char port2State);
-    void reportUserCardPortState(char portId, char deviceId, char slotIndex, char state, char type);
+    void reportEthPortsState(char deviceId, char mpuFlag, char port1State, char port2State);
+    void reportUserCardPortState(char deviceId, char slotIndex, char portId, char type, char state);
 
 public slots:
     void onSendHeartbeat();
@@ -52,7 +52,7 @@ private:
     void processUserCardStatePkt(const QByteArray &byteArray);
     void processCWPIntoPkt(const QByteArray &byteArray);
     void processDeviceInfoPkt(const QByteArray &byteArray);
-    void processMPUNetworkPortsStatePkt(const QByteArray &byteArray);
+    void processEthPortsStatePkt(const QByteArray &byteArray);
     void processUserCardPortStatePkt(const QByteArray &byteArray);
     void replyPkt(const QNetworkDatagram &datagram);
 

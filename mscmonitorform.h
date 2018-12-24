@@ -5,12 +5,15 @@
 #include <QVector>
 #include <QMap>
 
+class CustomSvrLabel;
 class CustomLIULabel;
 class QBoxLayout;
 class QGridLayout;
 class QScrollArea;
 class QLabel;
 class QTimer;
+struct Device;
+struct DeviceState;
 
 class MSCMonitorForm : public QWidget
 {
@@ -18,61 +21,23 @@ class MSCMonitorForm : public QWidget
 
 enum
 {
-    FormDefaultWidth = 1440,
-    FormDefaultHeight = 758,
-    FormMargin = 20,
+    kFormDefaultWidth = 1440,
+    kFormDefaultHeight = 758,
+    kFormMargin = 20,
 
-    SvrLabelWidth = 165,
-    SvrLabelHeight = 165,
-    SvrHStretch = 3,
-    NetworkBusLabelWidth = 110,
-    NetworkBusLabelHeight = FormDefaultHeight - FormMargin,
-    NetworkBusHStretch = 2,
-    LIULabelWidth = 1126,
-    LIULabelHeigth = 220,
-    LIUItemsHStretch = 20,
-    LIUItemsSpace = 25,
-    DefaultLIUItemsNumber = 3,
+    kSvrLabelWidth = 165,
+    kSvrLabelHeight = 165,
+    kSvrHStretch = 3,
+    kNetworkBusLabelWidth = 110,
+    kNetworkBusLabelHeight = kFormDefaultHeight - kFormMargin,
+    kNetworkBusHStretch = 2,
+    kLIULabelWidth = 1126,
+    kLIULabelHeigth = 220,
+    kLIUItemsHStretch = 20,
+    kLIUItemsSpace = 25,
+    kDefaultLIUItemsNumber = 3,
 
-    DeviceStateTimerInterval = 1000 // 设备状态更新定时器
-};
-
-struct SvrItem
-{
-    QLabel *labelSvr;
-    QLabel *labelSvrName;
-};
-
-struct DeviceState
-{
-    bool isStateChanged;
-
-    int deviceId; // 标识唯一的SVR或LIU
-    int slotIndex; // LIU板卡槽位号，仅设备为LIU时有效
-    int runningState; // SVR或LIU运行状态：0离线；1在线
-    int cardType; // LIU板卡类型，仅设备为LIU且板卡为用户卡时有效
-
-    struct PortState
-    {
-        int type; // 端口类型，仅设备为LIU且板卡为用户卡时有效
-        int state; // 端口状态
-    };
-
-    // 端口状态列表，当设备为LIU-MPU板时，表示网口1和网口2状态；
-    // 当设备为LIU用户板时表示各种类型端口
-    QMap<int, PortState *> portStateList;
-};
-
-struct Device
-{
-    int type;
-    union DeviceItem
-    {
-        SvrItem *svrItem;
-        CustomLIULabel *liuItem;
-    };
-
-    DeviceItem deviceItem;
+    kDeviceStateTimerInterval = 1000 // 设备状态更新定时器
 };
 
 public:
@@ -83,11 +48,11 @@ signals:
 
 public slots:
     void onHeartbeatTimeout();
-    void onReportMainCardState(char deviceId, char slotIndex, char state);
-    void onReportUserCardState(char deviceId, char slotIndex, char state, char type);
     void onReportDeviceInfo(char deviceId, char deviceType, const QByteArray &deviceName);
-    void onReportMPUNetworkPortsState(char mpuIndex, char deviceId, char port1State, char port2State);
-    void onReportUserCardPortState(char portId, char deviceId, char slotIndex, char state, char type);
+    void onReportMainCardState(char deviceId, char mpuFlag, char state);
+    void onReportUserCardState(char deviceId, char slotIndex, char type, char state);
+    void onReportEthPortsState(char deviceId, char mpuFlag, char port1State, char port2State);
+    void onReportUserCardPortState(char deviceId, char slotIndex, char portId, char type, char state);
 
     void onUpdateDeviceStateTimer();
 
@@ -97,30 +62,32 @@ protected:
 private:
     void initFormContentsLayout();
 
-    void addSvrItem(int deviceId, int deviceType, const QString &svrName);
+    void addSvrItem(int deviceId, int deviceType, const QString &svrItemName);
     void addNetworkBusItem();
     void addLIUItem(int deviceId, int deviceType, const QString &liuItemName);
 
     void checkChildWidgetsSizeToScroll(int formWidth, int formHeight);
 
-    void updateCardRunningState(int deviceId, int slotIndex, int state, int type);
-    void updateMPUNetworkPortsState(int mpuIndex, int deviceId, int port1State, int port2State);
-    void updateUserCardPortState(int portId, int deviceId, int slotIndex, int state, int type);
+    void updateDeviceState(int deviceId, int slotIndex, int type, int state);
+    void updateEthPortsState(int deviceId, int mpuFlag, int port1State, int port2State);
+    void updateUserCardPortState(int deviceId, int slotIndex, int portId, int type, int state);
 
 private:
-    QScrollArea *scrollArea;
-    QWidget *scrollAreaWidgetContents;
-    QBoxLayout *contentsLayout;
-    QBoxLayout *svrItemsLayout;
-    QBoxLayout *networkBusItemsLayout;
-    QBoxLayout *liuItemsLayout;
+    QScrollArea *scrollArea_;
+    QWidget *widgetScrollAreaContent_;
+    QBoxLayout *layoutcontents_;
+    QBoxLayout *layoutSvrItems_;
+    QBoxLayout *layoutNetworkBusItems_;
+    QBoxLayout *layoutLIUItems_;
 
-    QTimer *deviceStateTimer;
-    int formWidth = 0;
-    int formHeight = 0;
-    int liuItemCount = 0;
-    QMap<int, Device *> deviceList;
-    QMap<int, DeviceState *> deviceStateList;
+    QTimer *devStateTimer_;
+    int formWidth_ = 0;
+    int formHeight_ = 0;
+    int liuItemCount_ = 0;
+    // key表示设备号, value表示SVR或LIU设备
+    QMap<int, Device *> mapDevs_;
+    // key高字为设备号，低字为槽位号，value表示SVR或LIU板卡状态信息
+    QMap<int, DeviceState *> mapDevStateInfos_;
 };
 
 #endif // MSCMONITORFORM_H

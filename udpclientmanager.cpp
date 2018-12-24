@@ -21,8 +21,8 @@ UdpClientManager::UdpClientManager(QObject *parent) : QObject(parent)
                 this, SIGNAL(reportCWPState(char,char,QByteArray,QByteArray,QByteArray,QByteArray)));
         connect(client, SIGNAL(reportDeviceInfo(char,char,QByteArray)),
                 this, SIGNAL(reportDeviceInfo(char,char,QByteArray)));
-        connect(client, SIGNAL(reportMPUNetworkPortsState(char,char,char,char)),
-                this, SIGNAL(reportMPUNetworkPortsState(char,char,char,char)));
+        connect(client, SIGNAL(reportEthPortsState(char,char,char,char)),
+                this, SIGNAL(reportEthPortsState(char,char,char,char)));
         connect(client, SIGNAL(reportUserCardPortState(char,char,char,char,char)),
                 this, SIGNAL(reportUserCardPortState(char,char,char,char,char)));
         if (client->initSock(svrIpList[i], svrPortList[i]))

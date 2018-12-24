@@ -32,8 +32,8 @@ public:
 public:
     CustomLIULabel(const QString &liuName, QWidget *parent = nullptr);
 
-    void updateCardStateInfo(int slotIndex, int runningState, int cardType);
-    void updateCardPortState(int slotIndex, int portId, int state, int type);
+    void updateCardRunningState(int slotIndex, int cardType, int runningState);
+    void updateCardPortState(int slotIndex, int portId, int type, int state);
     void updateCardEthPortsState(int mpuFlag, int port1State, int port2State);
 
 private:

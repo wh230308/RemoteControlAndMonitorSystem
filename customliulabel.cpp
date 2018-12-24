@@ -38,7 +38,7 @@ CustomLIULabel::CustomLIULabel(const QString &liuName, QWidget *parent)
     cardStateTimer_->start(kCardStateTimerInterval);
 }
 
-void CustomLIULabel::updateCardStateInfo(int slotIndex, int runningState, int cardType)
+void CustomLIULabel::updateCardRunningState(int slotIndex, int cardType, int runningState)
 {
     Q_ASSERT(slotIndex >= 0);
     Q_ASSERT(slotIndex < kCardNumberPerLIU);
@@ -55,7 +55,7 @@ void CustomLIULabel::updateCardStateInfo(int slotIndex, int runningState, int ca
     liuCard->updateRunningState(runningState);
 }
 
-void CustomLIULabel::updateCardPortState(int slotIndex, int portId, int state, int type)
+void CustomLIULabel::updateCardPortState(int slotIndex, int portId, int type, int state)
 {
     Q_ASSERT(slotIndex >= 0);
     Q_ASSERT(slotIndex < kCardNumberPerLIU);
@@ -64,7 +64,7 @@ void CustomLIULabel::updateCardPortState(int slotIndex, int portId, int state, i
     if (!lblLIUCard->isVisible())
         lblLIUCard->setVisible(true);
 
-    lblLIUCard->updatePortState(portId, state, type);
+    lblLIUCard->updatePortState(portId, type, state);
 }
 
 void CustomLIULabel::updateCardEthPortsState(int mpuFlag, int port1State, int port2State)

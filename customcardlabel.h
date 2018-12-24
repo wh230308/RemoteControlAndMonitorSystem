@@ -40,7 +40,7 @@ public:
 
     void updateCardTypeName(const QString &typeName);
     void updateRunningState(int state);
-    void updatePortState(int portId, int state, int type); // 更新端口状态，仅用户板
+    void updatePortState(int portId, int type, int state); // 更新端口状态，仅用户板
     void updateEthPortsState(int port1State, int port2State); // 更新网口状态，仅主控板
 
     bool isCardRunning() const { return runningState_ == 0x01; }

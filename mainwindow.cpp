@@ -69,8 +69,8 @@ MainWindow::MainWindow(QWidget *parent) :
             mscMonitorForm, SLOT(onReportUserCardState(char,char,char,char)));
     connect(udpClientMgr, SIGNAL(reportDeviceInfo(char,char,QByteArray)),
             mscMonitorForm, SLOT(onReportDeviceInfo(char,char,QByteArray)));
-    connect(udpClientMgr, SIGNAL(reportMPUNetworkPortsState(char,char,char,char)),
-            mscMonitorForm, SLOT(onReportMPUNetworkPortsState(char,char,char,char)));
+    connect(udpClientMgr, SIGNAL(reportEthPortsState(char,char,char,char)),
+            mscMonitorForm, SLOT(onReportEthPortsState(char,char,char,char)));
     connect(udpClientMgr, SIGNAL(reportUserCardPortState(char,char,char,char,char)),
             mscMonitorForm, SLOT(onReportUserCardPortState(char,char,char,char,char)));
     //connect(udpClientMgr, SIGNAL(reportCWPState(char,char,QByteArray,QByteArray,QByteArray,QByteArray)),
@@ -102,26 +102,27 @@ void MainWindow::onSwitchToPhone()
 
     /*
     // test onReportMainCardState and onReportUserCardState
-    char deviceId = 0x03;
-    char slotIndex = 0x00;
-    char state = 0x01;
-    mscMonitorForm->onReportMainCardState(deviceId, slotIndex, state);
+    {
+        char deviceId = 0x03;
+        char mpuFlag = 0x00;
+        char state = 0x01;
+        mscMonitorForm->onReportMainCardState(deviceId, mpuFlag, state);
+        mscMonitorForm->onReportEthPortsState(deviceId, mpuFlag, 0x01, 0x01);
 
-    deviceId = 0x04;
-    slotIndex = 0x01;
-    state = 0x01;
-    mscMonitorForm->onReportMainCardState(deviceId, slotIndex, state);
-
-    deviceId = 0x06;
-    for (char i = 3; i < 15; i++) {
-        slotIndex = i;
+        deviceId = 0x04;
+        mpuFlag = 0x01;
         state = 0x01;
-        char type = i % 9;
-        mscMonitorForm->onReportUserCardState(deviceId, slotIndex, state, type);
-        if ((slotIndex == 0x08) || (slotIndex == 0x09))
-            mscMonitorForm->onReportMPUNetworkPortsState(0x01, 0x06, 0x01, 0x01);
-        else
-            mscMonitorForm->onReportUserCardPortState(0x00, deviceId, slotIndex, 0x01, 0x00);
+        mscMonitorForm->onReportMainCardState(deviceId, mpuFlag, state);
+        mscMonitorForm->onReportEthPortsState(deviceId, mpuFlag, 0x01, 0x01);
+    }
+
+    char deviceId = 0x06;
+    for (char i = 3; i < 15; i++) {
+        char slotIndex = i;
+        char state = 0x01;
+        char type = i % 8;
+        mscMonitorForm->onReportUserCardState(deviceId, slotIndex, type, state);
+        mscMonitorForm->onReportUserCardPortState(deviceId, slotIndex, 0x00, 0x00, 0x01);
     }
     */
 }
@@ -141,7 +142,7 @@ void MainWindow::onSwitchToRadio()
                             { '2', '3', '2', '-', '2', '3', '3' },
                             { '2', '3', '4', '-', '2', '3', '5' } };
 
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 5; i++) {
         QByteArray deviceName(name[i], sizeof(name[i]) / sizeof(name[i][0]));
         mscMonitorForm->onReportDeviceInfo(deviceId[i], deviceType[i], deviceName);
     }

@@ -149,7 +149,7 @@ void UdpClient::processTheDatagram(const QNetworkDatagram &datagram)
         else if ((0x80 == static_cast<uchar>(datagram.data().at(0))
                   && (datagram.data().size()) >= 8)) {
             //qDebug() << tr("onReportNetworkInterfaceState...");
-            processMPUNetworkPortsStatePkt(datagram.data());
+            processEthPortsStatePkt(datagram.data());
         }
         else if ((0x71 == datagram.data().at(0)) && (datagram.data().size()) >= 21) {
             //qDebug() << tr("onReportDeviceInfo...");
@@ -179,10 +179,10 @@ void UdpClient::processHeartbeatPkt(const QByteArray &byteArray)
 void UdpClient::processMainCardStatePkt(const QByteArray &byteArray)
 {
     char deviceId = byteArray.at(4);
-    char slotIndex = byteArray.at(3);
+    char mpuFlag = byteArray.at(3);
     char state = byteArray.at(5);
 
-    emit reportMainCardState(deviceId, slotIndex, state);
+    emit reportMainCardState(deviceId, mpuFlag, state);
 }
 
 void UdpClient::processUserCardStatePkt(const QByteArray &byteArray)
@@ -192,7 +192,7 @@ void UdpClient::processUserCardStatePkt(const QByteArray &byteArray)
     char state = byteArray.at(5);
     char type = byteArray.at(6);
 
-    emit reportUserCardState(deviceId, slotIndex, state, type);
+    emit reportUserCardState(deviceId, slotIndex, type, state);
 }
 
 void UdpClient::processCWPIntoPkt(const QByteArray &byteArray)
@@ -216,14 +216,14 @@ void UdpClient::processDeviceInfoPkt(const QByteArray &byteArray)
     emit reportDeviceInfo(deviceId, deviceType, deviceName);
 }
 
-void UdpClient::processMPUNetworkPortsStatePkt(const QByteArray &byteArray)
+void UdpClient::processEthPortsStatePkt(const QByteArray &byteArray)
 {
-    char mpuIndex = byteArray.at(3);
+    char mpuFlag = byteArray.at(3);
     char deviceId = byteArray.at(4);
     char port1State = byteArray.at(5);
     char port2State = byteArray.at(6);
 
-    emit reportMPUNetworkPortsState(mpuIndex, deviceId, port1State, port2State);
+    emit reportEthPortsState(deviceId, mpuFlag, port1State, port2State);
 }
 
 void UdpClient::processUserCardPortStatePkt(const QByteArray &byteArray)
@@ -234,7 +234,7 @@ void UdpClient::processUserCardPortStatePkt(const QByteArray &byteArray)
     char state = byteArray.at(6);
     char type = byteArray.at(7);
 
-    emit reportUserCardPortState(portId, deviceId, slotIndex, state, type);
+    emit reportUserCardPortState(portId, deviceId, slotIndex, type, state);
 }
 
 void UdpClient::replyPkt(const QNetworkDatagram &datagram)

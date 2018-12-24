@@ -38,7 +38,8 @@ SOURCES += \
     udpclientmanager.cpp \
     serveraddrconfigdialog.cpp \
     customcardlabel.cpp \
-    customliulabel.cpp
+    customliulabel.cpp \
+    customsvrlabel.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -53,7 +54,9 @@ HEADERS += \
     udpclientmanager.h \
     serveraddrconfigdialog.h \
     customcardlabel.h \
-    customliulabel.h
+    customliulabel.h \
+    customsvrlabel.h \
+    mscdatadeclaration.h
 
 FORMS += \
         mainwindow.ui \

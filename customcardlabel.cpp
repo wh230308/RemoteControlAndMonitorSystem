@@ -47,13 +47,13 @@ void CustomCardLabel::updateRunningState(int state)
         lblRunningStateLamp_->setPixmap(QPixmap(stateLampRunningImgPath));
 }
 
-void CustomCardLabel::updatePortState(int portId, int state, int type)
+void CustomCardLabel::updatePortState(int portId, int type, int state)
 {
     Q_ASSERT(portId >= 0);
     Q_ASSERT(portId <= kMaximumPortId);
     Q_ASSERT((state == 0x00) || (state == 0x01));
     Q_ASSERT(type >= 0);
-    Q_ASSERT(type <= mapCardPorts_.size());
+    Q_ASSERT(type <= portTyepDescList.count());
 
     QString imgPath;
     if (state == 0x00)
@@ -77,7 +77,6 @@ void CustomCardLabel::updateEthPortsState(int port1State, int port2State)
     Q_ASSERT((port1State == 0x00) || (port1State == 0x01));
     Q_ASSERT((port2State == 0x00) || (port2State == 0x01));
 
-    // TODO:
     qDebug() << tr("updateEthPortsState");
 }
 
