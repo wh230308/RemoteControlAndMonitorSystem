@@ -1,28 +1,62 @@
 #include "cwpmonitorform.h"
 
 #include <QLabel>
+#include <QEvent>
+#include <QDebug>
 
 #include "flowlayout.h"
-#include "utility.h"
+#include "customcwplabel.h"
+#include "log.hpp"
 
 
 CWPMonitorForm::CWPMonitorForm(QWidget *parent) : QWidget(parent)
 {
-    auto flowlayout = new FlowLayout(this, 30, 15, 15);
-    for (int i = 0; i < CWPNumber; i++) {
-        auto labelCWP = new QLabel(this);
-        labelCWP->setObjectName(QString("labelCWP%1").arg(i));
-        Utility::fillLabelWithImage(labelCWP, 96, 96, ":/images/cwp.gif");
-        flowlayout->addWidget(labelCWP);
+    auto layoutContents = new FlowLayout(this, kMargin, kCWPItemHSpace, kCWPItemVSpace);
+    for (int i = 0; i < kCWPItemNumber; i++) {
+        auto lblCWP = new CustomCWPLabel(this);
+        layoutContents->addWidget(lblCWP);
+    }
+}
 
-        auto cwpInnerLayout = new QVBoxLayout(labelCWP);
-        cwpInnerLayout->setObjectName(QStringLiteral("cwpInnerLayout"));
-        cwpInnerLayout->setContentsMargins(9, 9, 9, 1);
-        cwpInnerLayout->setSpacing(0);
+void CWPMonitorForm::onReportCWPState(char seatId, char seatState, const QByteArray &userName,
+                                      const QByteArray &leftPhone, const QByteArray &rightPhone,
+                                      const QByteArray &userRoles)
+{
+    qDebug() << tr("CWP Form pos:") << pos();
+    qDebug() << tr("CWP Form global pos:") << mapToGlobal(pos());
 
-        auto labelCWPId = new QLabel(tr("<h2>CWP%1</h2>").arg(i + 1), labelCWP);
-        labelCWPId->setObjectName(QString("labelCWPId%1").arg(i));
-        cwpInnerLayout->addWidget(labelCWPId);
-        cwpInnerLayout->setAlignment(labelCWPId, Qt::AlignHCenter | Qt::AlignBottom);
+    CustomCWPLabel *lblCWPItem = nullptr;
+    foreach (auto item, vecCWPItems_) {
+        if (item->getCWPId() == 0xff || item->getCWPId() == seatId) {
+            lblCWPItem = item;
+            break;
+        }
+    }
+
+    if (lblCWPItem != nullptr) {
+        QVector<QString> roles;
+        QString role;
+        for (int i = 0; i < userRoles.count(); i++) {
+            if (userRoles.at(i) != '\0') {
+                role.push_back(userRoles.at(i));
+                continue;
+            }
+
+            if (!role.isEmpty()) {
+                roles.push_back(role);
+                role.clear();
+            }
+        }
+
+        CWPInfo cwpInfo;
+        cwpInfo.seatId = seatId;
+        cwpInfo.state = seatState;
+        cwpInfo.userName = userName;
+        cwpInfo.leftPhone = leftPhone;
+        cwpInfo.rightPhone = rightPhone;
+        cwpInfo.userRole1 = roles.at(0);
+        cwpInfo.userRole1 = roles.at(1);
+        cwpInfo.userRole1 = roles.at(2);
+        lblCWPItem->setCWPInfo(cwpInfo);
     }
 }

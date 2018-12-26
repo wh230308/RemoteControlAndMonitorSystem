@@ -28,10 +28,10 @@ static const QStringList cardTyepDescList = {
     QObject::tr("RIU"),
 };
 
-CustomLIULabel::CustomLIULabel(const QString &liuName, QWidget *parent)
+CustomLIULabel::CustomLIULabel(QWidget *parent)
     : QLabel(parent)
 {
-    initContentsLayout(liuName);
+    initContentsLayout();
 
     cardStateTimer_ = new QTimer(this);
     connect(cardStateTimer_, SIGNAL(timeout()), this, SLOT(onUpdateCardStateTimer()));
@@ -79,7 +79,7 @@ void CustomLIULabel::updateCardEthPortsState(int mpuFlag, int port1State, int po
     lblLIUCard->updateEthPortsState(port1State, port2State);
 }
 
-void CustomLIULabel::initContentsLayout(const QString &liuName)
+void CustomLIULabel::initContentsLayout()
 {
     if (objectName().isEmpty())
         setObjectName(QString("customLIULabel%1").arg(Utility::generateUniqueObjectId()));
@@ -91,15 +91,9 @@ void CustomLIULabel::initContentsLayout(const QString &liuName)
     layoutContents_ = new QGridLayout(this);
     layoutContents_->setObjectName(QString("layoutContents%1")
                                    .arg(Utility::generateUniqueObjectId()));
-    layoutContents_->setHorizontalSpacing(1);
+    layoutContents_->setContentsMargins(8, 0, 8, 0);
+    layoutContents_->setHorizontalSpacing(6);
     layoutContents_->setVerticalSpacing(0);
-
-    // LIU名称描述
-    lblLIUName_ = new QLabel(tr("<b>Frame:%1</b>").arg(liuName), this);
-    lblLIUName_->setObjectName(QString("lblLIUName%1").arg(Utility::generateUniqueObjectId()));
-    lblLIUName_->setAlignment(Qt::AlignCenter);
-    layoutContents_->addWidget(lblLIUName_, 0, 0, 2, 1, Qt::AlignCenter);
-    layoutContents_->setColumnStretch(0, kLIUContentNameColumnWidth);
 
     // 板卡及其对应槽位号
     int index = 0;
@@ -115,11 +109,10 @@ void CustomLIULabel::initContentsLayout(const QString &liuName)
         lblCardSlotIndex->setObjectName(QString("lblCardSlotIndex%1")
                                         .arg(Utility::generateUniqueObjectId()));
         lblCardSlotIndex->setAlignment(Qt::AlignCenter);
-        layoutContents_->addWidget(lblCardSlotIndex, 0, i + 1, Qt::AlignCenter);
+        layoutContents_->addWidget(lblCardSlotIndex, 0, i, Qt::AlignCenter);
 
         auto lblLIUCard = new CustomCardLabel(this, isMPUCard);
-        layoutContents_->addWidget(lblLIUCard, 1, i + 1, Qt::AlignCenter);
-        layoutContents_->setColumnStretch(i + 1, kLIUContentCardColumnWidth);
+        layoutContents_->addWidget(lblLIUCard, 1, i, Qt::AlignCenter);
 
         vecLIUCards_.push_back(lblLIUCard);
     }

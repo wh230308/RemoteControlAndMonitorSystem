@@ -2,9 +2,9 @@
 #define UDPCLIENT_H
 
 #include <QObject>
+#include <QUdpSocket>
+#include <QHostAddress>
 
-class QUdpSocket;
-class QHostAddress;
 class QNetworkDatagram;
 class QTimer;
 
@@ -22,13 +22,13 @@ public:
     ~UdpClient();
 
 public:
-    bool initSock(const QString &svrIp, ushort port);
+    bool initSock(const QString &svrIp, ushort port, const QString &localIp, ushort localport);
     void uinitSock();
     bool sendPacket(const char *data, int size);
     bool sendPacket(const QNetworkDatagram &datagram);
 
-    void getSvrAddr(QString &svrIp, ushort &svrPort) const;
-    bool updateSvrAddr(const QString &svrIp, ushort svrPort);
+    void getSvrAddr(QString &svrIp, ushort &svrPort_) const;
+    bool updateSvrAddr(const QString &svrIp, ushort svrPort_);
 
 signals:
     void heartbeatTimeout();
@@ -57,12 +57,12 @@ private:
     void replyPkt(const QNetworkDatagram &datagram);
 
 private:
-    QUdpSocket *udpSock = nullptr;
-    QHostAddress *svrHostAddr = nullptr;
-    ushort svrPort = 0;
-    QTimer *heartbeatTimer = nullptr;
-    int heartbeatPktCount = 0;
-    bool isFirstHeartbeatPkt = true;
+    QUdpSocket localSock_;
+    QHostAddress svrIp_;
+    ushort svrPort_ = 0;
+    QTimer *heartbeatTimer_ = nullptr;
+    int heartbeatPktCount_ = 0;
+    bool isFirstHeartbeatPkt_ = true;
 };
 
 #endif // UDPCLIENT_H

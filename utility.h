@@ -15,8 +15,10 @@ public:
     static void fillLabelWithImage(QLabel *label, int width, int height, const QString &imagePath);
     static void fillLabelWithImage(QLabel *label, const QString &imagePath);
 
-    static void loadServerAddrConfig(QString &svr1Ip, ushort &svr1Port,
-                                     QString &svr2Ip, ushort &svr2Port);
+    static bool loadSvrAddrConfig(QString &svr1Ip, ushort &svr1Port,
+                                  QString &svr2Ip, ushort &svr2Port);
+    static bool saveSvrAddrConfig(const QString &svr1Ip, ushort svr1Port,
+                                  const QString &svr2Ip, ushort svr2Port);
 };
 
 #endif // UTILITY_H

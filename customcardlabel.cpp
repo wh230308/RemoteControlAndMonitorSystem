@@ -20,7 +20,9 @@ static const QStringList portTyepDescList = {
     QObject::tr("EM4")
 };
 
-static const QString cardImagePath(":/images/card.gif");
+static const QString cardImgPath(":/images/card.gif");
+static const QString cardImgPathOffline(":/images/card_offline.jpg");
+static const QString cardImgPathSingleEth(":/images/card_single_eth.jpg");
 static const QString stateLampOffImgPath(":/images/lamp_off.gif");
 static const QString stateLampRunningImgPath(":/images/lamp_running.gif");
 
@@ -33,18 +35,20 @@ CustomCardLabel::CustomCardLabel(QWidget *parent, bool isMPUCard)
 
 void CustomCardLabel::updateCardTypeName(const QString &typeName)
 {
-    lblTypeName_->setText(tr("<b>%1</b>").arg(typeName));
+    lblTypeName_->setText(tr("%1").arg(typeName));
 }
 
 void CustomCardLabel::updateRunningState(int state)
 {
     Q_ASSERT((state == 0x00) || (state == 0x01));
 
-    runningState_ = state;
-    if (state == 0x00)
+    if (state == 0x00) {
+        isRunning_ = false;
         lblRunningStateLamp_->setPixmap(QPixmap(stateLampOffImgPath));
-    else
+    } else {
+        isRunning_ = true;
         lblRunningStateLamp_->setPixmap(QPixmap(stateLampRunningImgPath));
+    }
 }
 
 void CustomCardLabel::updatePortState(int portId, int type, int state)
@@ -55,6 +59,9 @@ void CustomCardLabel::updatePortState(int portId, int type, int state)
     Q_ASSERT(type >= 0);
     Q_ASSERT(type <= portTyepDescList.count());
 
+    if (!isRunning_)
+        state = 0x00;
+
     QString imgPath;
     if (state == 0x00)
         imgPath = stateLampOffImgPath;
@@ -62,22 +69,25 @@ void CustomCardLabel::updatePortState(int portId, int type, int state)
         imgPath = stateLampRunningImgPath;
 
     if (!mapCardPorts_.contains(portId)) {
-        // 新增板卡端口
+        // 新增用户板端口
         addPortStateLayout(portId, imgPath);
     } else {
-        // 已存在的板卡端口
+        // 已存在的用户板端口
         mapCardPorts_.value(portId)->lblStateLamp->setPixmap(QPixmap(imgPath));
-        mapCardPorts_.value(portId)->lblTypeDesc->setText(tr("<b>%1</b>").arg(portId));
     }
 }
 
 void CustomCardLabel::updateEthPortsState(int port1State, int port2State)
 {
-
     Q_ASSERT((port1State == 0x00) || (port1State == 0x01));
     Q_ASSERT((port2State == 0x00) || (port2State == 0x01));
 
-    qDebug() << tr("updateEthPortsState");
+    if (!isRunning_) {
+        Utility::fillLabelWithImage(this, kCardLabelWidth, kCardLabelHeight, cardImgPathOffline);
+    }
+
+    if ((port1State == 0) || (port2State == 0))
+        Utility::fillLabelWithImage(this, kCardLabelWidth, kCardLabelHeight, cardImgPathSingleEth);
 }
 
 void CustomCardLabel::flickerRunningStateLamp(int parity)
@@ -93,7 +103,7 @@ void CustomCardLabel::initContentsLayout()
     if (objectName().isEmpty())
         setObjectName(QString("customCardLabel%1").arg(Utility::generateUniqueObjectId()));
 
-    Utility::fillLabelWithImage(this, kCardLabelWidth, kCardLabelHeight, cardImagePath);
+    Utility::fillLabelWithImage(this, kCardLabelWidth, kCardLabelHeight, cardImgPath);
     setAlignment(Qt::AlignCenter);
     setVisible(false); // 板卡默认不显示，当服务器有上报该板卡状态时显示
 
@@ -106,6 +116,7 @@ void CustomCardLabel::initContentsLayout()
     lblTypeName_ = new QLabel(this);
     lblTypeName_->setObjectName(QString("lblTypeName%1").arg(Utility::generateUniqueObjectId()));
     lblTypeName_->setAlignment(Qt::AlignCenter);
+    lblTypeName_->setFont(QFont(QString("Calibri"), 9, QFont::Bold));
     layoutContents_->addWidget(lblTypeName_, 1, 1, 1, 2, Qt::AlignHCenter | Qt::AlignBottom);
 
 
@@ -122,7 +133,7 @@ void CustomCardLabel::initContentsLayout()
     lblRunningStateDesc->setObjectName(QString("lblRunningStateDesc%1")
                                          .arg(Utility::generateUniqueObjectId()));
     lblRunningStateDesc->setAlignment(Qt::AlignCenter);
-    lblRunningStateDesc->setFont(QFont(QString("Microsoft YaHei"), 6, 1));
+    lblRunningStateDesc->setFont(QFont(QString("Calibri"), 6, QFont::Bold));
     layoutContents_->addWidget(lblRunningStateDesc, 2, 2, Qt::AlignHCenter | Qt::AlignBottom);
 
     // GridLayout默认4行，第1行第4行留白，第2行展示板卡类型，第3行展示运行状态灯及其描述

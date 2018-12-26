@@ -8,7 +8,7 @@ UdpClientManager::UdpClientManager(QObject *parent) : QObject(parent)
 {
     QString svrIpList[2];
     ushort svrPortList[2];
-    Utility::loadServerAddrConfig(svrIpList[0], svrPortList[0], svrIpList[1], svrPortList[1]);
+    Utility::loadSvrAddrConfig(svrIpList[0], svrPortList[0], svrIpList[1], svrPortList[1]);
 
     for (int i = 0; i < 2; i++) {
         auto client = new UdpClient;
@@ -25,32 +25,32 @@ UdpClientManager::UdpClientManager(QObject *parent) : QObject(parent)
                 this, SIGNAL(reportEthPortsState(char,char,char,char)));
         connect(client, SIGNAL(reportUserCardPortState(char,char,char,char,char)),
                 this, SIGNAL(reportUserCardPortState(char,char,char,char,char)));
-        if (client->initSock(svrIpList[i], svrPortList[i]))
-            udpClientList.push_back(client);
+        if (client->initSock(svrIpList[i], svrPortList[i], QString("0.0.0.0"), 0))
+            vecUdpClients_.push_back(client);
     }
 }
 
 UdpClientManager::~UdpClientManager()
 {
-    foreach (UdpClient *client, udpClientList) {
+    foreach (UdpClient *client, vecUdpClients_) {
         delete client;
     }
-    udpClientList.clear();
+    vecUdpClients_.clear();
 }
 
-void UdpClientManager::onServerAddrChanged(const QString &svr1Ip, ushort svr1Port,
-                                           const QString &svr2Ip, ushort svr2Port)
+void UdpClientManager::onSvrAddrChanged(const QString &svr1Ip, ushort svr1Port,
+                                        const QString &svr2Ip, ushort svr2Port)
 {
     QString svrIp;
     ushort svrPort = 0;
 
-    udpClientList.at(0)->getSvrAddr(svrIp, svrPort);
+    vecUdpClients_.at(0)->getSvrAddr(svrIp, svrPort);
     if ((svrIp != svr1Ip) || (svrPort != svr1Port)) {
-        udpClientList.at(0)->updateSvrAddr(svr1Ip, svr1Port);
+        vecUdpClients_.at(0)->updateSvrAddr(svr1Ip, svr1Port);
     }
 
-    udpClientList.at(1)->getSvrAddr(svrIp, svrPort);
+    vecUdpClients_.at(1)->getSvrAddr(svrIp, svrPort);
     if ((svrIp != svr2Ip) || (svrPort != svr2Port)) {
-        udpClientList.at(1)->updateSvrAddr(svr2Ip, svr2Port);
+        vecUdpClients_.at(1)->updateSvrAddr(svr2Ip, svr2Port);
     }
 }

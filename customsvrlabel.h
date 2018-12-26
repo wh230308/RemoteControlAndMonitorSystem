@@ -19,12 +19,12 @@ public:
     void updateRunningState(int runningState);
     void updateEthPortsState(int port1State, int port2State);
 
-signals:
-
-public slots:
-
 private:
     void initContentsLayout(const QString &svrName);
+
+private:
+    bool isRunning_ = false;
+    bool isDoubleEths_ = true;
 };
 
 #endif // CUSTOMSVRLABEL_H

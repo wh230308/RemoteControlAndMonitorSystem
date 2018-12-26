@@ -25,11 +25,11 @@ signals:
     void reportUserCardPortState(char deviceId, char slotIndex, char portId, char type, char state);
 
 public slots:
-    void onServerAddrChanged(const QString &svr1Ip, ushort svr1Port,
-                              const QString &svr2Ip, ushort svr2Port);
+    void onSvrAddrChanged(const QString &svr1Ip, ushort svr1Port,
+                          const QString &svr2Ip, ushort svr2Port);
 
 private:
-    QVector<UdpClient *> udpClientList;
+    QVector<UdpClient *> vecUdpClients_;
 };
 
 #endif // UDPCLIENTMANAGER_H

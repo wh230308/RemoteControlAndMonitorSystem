@@ -9,6 +9,7 @@
 #include <QLabel>
 #include <QResizeEvent>
 #include <QTimer>
+#include <QGroupBox>
 #include <QDebug>
 
 #include "utility.h"
@@ -40,6 +41,7 @@ void MSCMonitorForm::onHeartbeatTimeout()
 
 void MSCMonitorForm::onReportDeviceInfo(char deviceId, char deviceType, const QByteArray &deviceName)
 {
+    Q_ASSERT((deviceType == 0x00) || (deviceType == 0x01));
     LOG_TRACE("report the device info, deviceId:%d, deviceType:%d, deviceName:%s",
               deviceId, deviceType, deviceName.constData());
 
@@ -78,7 +80,7 @@ void MSCMonitorForm::onReportUserCardState(char deviceId, char slotIndex, char t
 
     // 界面布局板卡时，主控板和用户板排成一排，共18个槽位，主控板占据第8、9槽位，其余槽位由用户板占用。
     // 而上报的用户板槽位号是从0~15，因此用户板槽位号大于8时往右偏移2个位置
-    slotIndex = (slotIndex > 0x08) ? (slotIndex + 0x02) : slotIndex;
+    slotIndex = (slotIndex > 0x07) ? (slotIndex + 0x02) : slotIndex;
     updateDeviceState(deviceId, slotIndex, type, state);
 }
 
@@ -105,7 +107,7 @@ void MSCMonitorForm::onReportUserCardPortState(char deviceId, char slotIndex, ch
     LOG_TRACE("report the user card port state, deviceId:%d, slotIndex:%d, portId:%d, type:%d, "
               "state:%d", deviceId, slotIndex, static_cast<int>(portId), type, state);
 
-    slotIndex = (slotIndex > 0x08) ? (slotIndex + 0x02) : slotIndex;
+    slotIndex = (slotIndex > 0x07) ? (slotIndex + 0x02) : slotIndex;
     updateUserCardPortState(deviceId, slotIndex, static_cast<int>(portId),  type, state);
 }
 
@@ -176,8 +178,6 @@ void MSCMonitorForm::initFormContentsLayout()
 
 void MSCMonitorForm::addSvrItem(int deviceId, int deviceType, const QString &svrItemName)
 {
-    Q_ASSERT((deviceType == 0x00) || (deviceType == 0x01));
-
     auto lblSvrItem = new CustomSvrLabel(svrItemName, widgetScrollAreaContent_);
     layoutSvrItems_->insertWidget(layoutSvrItems_->count() - 1, lblSvrItem);
     layoutSvrItems_->setAlignment(lblSvrItem, Qt::AlignHCenter | Qt::AlignTop);
@@ -200,11 +200,17 @@ void MSCMonitorForm::addNetworkBusItem()
 
 void MSCMonitorForm::addLIUItem(int deviceId, int deviceType, const QString &liuItemName)
 {
-    Q_ASSERT((deviceType == 0x00) || (deviceType == 0x01));
+    auto groupBox = new QGroupBox(tr("Frame:%1").arg(liuItemName), widgetScrollAreaContent_);
+    groupBox->setObjectName(QString("groupBox%1").arg(Utility::generateUniqueObjectId()));
+    layoutLIUItems_->insertWidget(layoutLIUItems_->count() - 1, groupBox);
+    layoutLIUItems_->setAlignment(groupBox, Qt::AlignHCenter | Qt::AlignTop);
 
-    auto lblLIUItem = new CustomLIULabel(liuItemName, widgetScrollAreaContent_);
-    layoutLIUItems_->insertWidget(layoutLIUItems_->count() - 1, lblLIUItem);
-    layoutLIUItems_->setAlignment(lblLIUItem, Qt::AlignHCenter | Qt::AlignTop);
+    auto layoutContents = new QHBoxLayout(groupBox);
+    layoutContents->setObjectName(QString("layoutContents%1").arg(Utility::generateUniqueObjectId()));
+    layoutContents->setContentsMargins(3, 3, 3, 3);
+
+    auto lblLIUItem = new CustomLIULabel(widgetScrollAreaContent_);
+    layoutContents->addWidget(lblLIUItem);
 
     if (!mapDevs_.contains(deviceId)) {
         mapDevs_.insert(deviceId, new Device(deviceType, lblLIUItem));

@@ -27,7 +27,7 @@ private slots:
     void onSwitchToPhone();
     void onSwitchToRadio();
 
-    void onConfigurateServerAddress();
+    void onConfigurateSvrAddr();
 
 private:
     Ui::MainWindow *ui;

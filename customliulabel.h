@@ -19,25 +19,23 @@ public:
         kCardNumberPerLIU = 18,
         kLIULabelWidth = 1126,
         kLIULabelHeigth = 220,
-        kLIUItemsSpace = 25,
+        kLIUItemsVSpace = 25,
 
         kLIUContentFirstRowHeight = 22,
-        kLIUContentLastRowHeight = 178,
-        kLIUContentNameColumnWidth = 190,
-        kLIUContentCardColumnWidth = 52,
+        kLIUContentLastRowHeight = 188,
 
         kCardStateTimerInterval = 500 // 板卡状态更新定时器
     };
 
 public:
-    CustomLIULabel(const QString &liuName, QWidget *parent = nullptr);
+    CustomLIULabel(QWidget *parent = nullptr);
 
     void updateCardRunningState(int slotIndex, int cardType, int runningState);
     void updateCardPortState(int slotIndex, int portId, int type, int state);
     void updateCardEthPortsState(int mpuFlag, int port1State, int port2State);
 
 private:
-    void initContentsLayout(const QString &liuName);
+    void initContentsLayout();
 
 private slots:
     void onUpdateCardStateTimer();

@@ -36,10 +36,12 @@ SOURCES += \
     udpclient.cpp \
     log.cpp \
     udpclientmanager.cpp \
-    serveraddrconfigdialog.cpp \
     customcardlabel.cpp \
     customliulabel.cpp \
-    customsvrlabel.cpp
+    customsvrlabel.cpp \
+    customtooltip.cpp \
+    customcwplabel.cpp \
+    svraddrconfigdialog.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -52,15 +54,17 @@ HEADERS += \
     udpclient.h \
     log.hpp \
     udpclientmanager.h \
-    serveraddrconfigdialog.h \
     customcardlabel.h \
     customliulabel.h \
     customsvrlabel.h \
-    mscdatadeclaration.h
+    mscdatadeclaration.h \
+    customtooltip.h \
+    customcwplabel.h \
+    svraddrconfigdialog.h
 
 FORMS += \
         mainwindow.ui \
-    serveraddrconfigdialog.ui
+    svraddrconfigdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

@@ -1,20 +1,14 @@
-#include "serveraddrconfigdialog.h"
-#include "ui_serveraddrconfigdialog.h"
+#include "svraddrconfigdialog.h"
+#include "ui_svraddrconfigdialog.h"
 
 #include <QGridLayout>
 #include <QSettings>
 
 #include "utility.h"
 
-#define SVRS_ADDR_FILENAME ("ServersAddress.ini")
-#define SVR1_IP_KEY ("Server1/Ip")
-#define SVR1_PORT_KEY ("Server1/Port")
-#define SVR2_IP_KEY ("Server2/Ip")
-#define SVR2_PORT_KEY ("Server2/Port")
-
-ServerAddrConfigDialog::ServerAddrConfigDialog(QWidget *parent) :
+SvrAddrConfigDialog::SvrAddrConfigDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::ServerAddrConfigDialog)
+    ui(new Ui::SvrAddrConfigDialog)
 {
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose);
@@ -36,45 +30,41 @@ ServerAddrConfigDialog::ServerAddrConfigDialog(QWidget *parent) :
     connect(ui->pushButtonSave, SIGNAL(clicked()), this, SLOT(onSaveConfig()));
     connect(ui->pushButtonClose, SIGNAL(clicked()), this, SLOT(onCloseDialog()));
 
-    loadServerAddrConfig();
+    loadSvrAddrConfig();
 }
 
-ServerAddrConfigDialog::~ServerAddrConfigDialog()
+SvrAddrConfigDialog::~SvrAddrConfigDialog()
 {
     delete ui;
 }
 
-void ServerAddrConfigDialog::onSaveConfig()
+void SvrAddrConfigDialog::onSaveConfig()
 {
     auto svr1Addr = ui->lineEditSvr1Addr->text();
-    auto svr1port = ui->lineEditSvr1Port->text();
+    auto svr1Port = ui->lineEditSvr1Port->text();
     auto svr2Addr = ui->lineEditSvr2Addr->text();
-    auto svr2port = ui->lineEditSvr1Port->text();
+    auto svr2Port = ui->lineEditSvr2Port->text();
 
-    QSettings setting(QString("%1\\%2").arg(QCoreApplication::applicationDirPath())
-                      .arg(SVRS_ADDR_FILENAME), QSettings::IniFormat);
-    setting.setValue(SVR1_IP_KEY, ui->lineEditSvr1Addr->text());
-    setting.setValue(SVR1_PORT_KEY, ui->lineEditSvr1Port->text());
-    setting.setValue(SVR2_IP_KEY, ui->lineEditSvr2Addr->text());
-    setting.setValue(SVR2_PORT_KEY, ui->lineEditSvr2Port->text());
-
-    emit serversAddrChanged(svr1Addr, svr1port.toUShort(), svr2Addr, svr2port.toUShort());
+    Utility::saveSvrAddrConfig(svr1Addr, svr1Port.toUShort(), svr2Addr, svr2Port.toUShort());
+    emit svrAddrChanged(svr1Addr, svr1Port.toUShort(), svr2Addr, svr2Port.toUShort());
 
     close();
 }
 
-void ServerAddrConfigDialog::onCloseDialog()
+void SvrAddrConfigDialog::onCloseDialog()
 {
     close();
 }
 
-void ServerAddrConfigDialog::loadServerAddrConfig()
+void SvrAddrConfigDialog::loadSvrAddrConfig()
 {
     QString svr1Ip;
     ushort svr1Port;
     QString svr2Ip;
     ushort svr2Port;
-    Utility::loadServerAddrConfig(svr1Ip, svr1Port, svr2Ip, svr2Port);
+    if (!Utility::loadSvrAddrConfig(svr1Ip, svr1Port, svr2Ip, svr2Port))
+        return;
+
     ui->lineEditSvr1Addr->setText(svr1Ip);
     ui->lineEditSvr1Port->setText(QString().setNum(svr1Port));
     ui->lineEditSvr2Addr->setText(svr2Ip);

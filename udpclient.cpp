@@ -1,7 +1,5 @@
 #include "udpclient.h"
 
-#include <QUdpSocket>
-#include <QHostAddress>
 #include <QNetworkDatagram>
 #include <QTimer>
 
@@ -14,41 +12,46 @@ UdpClient::UdpClient(QObject *parent) : QObject(parent)
 
 UdpClient::~UdpClient()
 {
-    if (heartbeatTimer != nullptr)
-        heartbeatTimer->stop();
+    if (heartbeatTimer_ != nullptr)
+        heartbeatTimer_->stop();
 
     uinitSock();
-    delete svrHostAddr;
 }
 
-bool UdpClient::initSock(const QString &svrIp, ushort svrPort)
+bool UdpClient::initSock(const QString &svrIp, ushort svrPort, const QString &localIp,
+                         ushort localPort)
 {
-    udpSock = new QUdpSocket(this);
-    if (!udpSock->bind()) {
+    QHostAddress localAddr;
+    if (localIp == QString("0.0.0.0"))
+        localAddr = QHostAddress::Any;
+    else
+        localAddr.setAddress(localIp);
+
+    if (!localSock_.bind(localAddr, localPort)) {
         LOG_ERROR("bind failed...");
         return false;
     }
 
-    connect(udpSock, SIGNAL(readyRead()), this, SLOT(readPendingDatagrams()));
-    svrHostAddr = new QHostAddress(svrIp);
-    this->svrPort = svrPort;
+    connect(&localSock_, SIGNAL(readyRead()), this, SLOT(readPendingDatagrams()));
+    svrIp_.setAddress(svrIp);
+    svrPort_ = svrPort;
 
-    heartbeatTimer = new QTimer(this);
-    connect(heartbeatTimer, SIGNAL(timeout()), this, SLOT(onSendHeartbeat()));
-    heartbeatTimer->start(HeartBeatTimerInterval);
+    heartbeatTimer_ = new QTimer(this);
+    connect(heartbeatTimer_, SIGNAL(timeout()), this, SLOT(onSendHeartbeat()));
+    heartbeatTimer_->start(HeartBeatTimerInterval);
 
     return true;
 }
 
 void UdpClient::uinitSock()
 {
-   udpSock->close();
+    localSock_.close();
 }
 
 bool UdpClient::sendPacket(const char *data, int size)
 {
-    if (-1 == udpSock->writeDatagram(data, static_cast<qint64>(size), *svrHostAddr, svrPort)) {
-        LOG_ERROR("send packet failed, error:%d", udpSock->error());
+    if (-1 == localSock_.writeDatagram(data, static_cast<qint64>(size), svrIp_, svrPort_)) {
+        LOG_ERROR("send packet failed, error:%d", localSock_.error());
         return false;
     }
 
@@ -57,8 +60,8 @@ bool UdpClient::sendPacket(const char *data, int size)
 
 bool UdpClient::sendPacket(const QNetworkDatagram &datagram)
 {
-    if (-1 == udpSock->writeDatagram(datagram)) {
-        LOG_ERROR("send packet failed, error:%d", udpSock->error());
+    if (-1 == localSock_.writeDatagram(datagram)) {
+        LOG_ERROR("send packet failed, error:%d", localSock_.error());
         return false;
     }
 
@@ -67,35 +70,34 @@ bool UdpClient::sendPacket(const QNetworkDatagram &datagram)
 
 void UdpClient::getSvrAddr(QString &svrIp, ushort &svrPort) const
 {
-    svrIp = svrHostAddr->toString();
-    svrPort = this->svrPort;
+    svrIp = svrIp_.toString();
+    svrPort = svrPort_;
 }
 
 bool UdpClient::updateSvrAddr(const QString &svrIp, ushort svrPort)
 {
     LOG_TRACE("update server address, svrIp:%s, svrPort:%u", svrIp.toStdString().c_str(), svrPort);
 
-    if (!svrHostAddr->setAddress(svrIp)) {
+    if (!svrIp_.setAddress(svrIp)) {
         LOG_ERROR("set server ip address failed, svrIp:%s", svrIp.toStdString().c_str());
         return false;
     }
 
-    this->svrPort = svrPort;
+    svrPort_ = svrPort;
 
     return true;
 }
 
 void UdpClient::onSendHeartbeat()
 {
-    heartbeatPktCount++;
+    heartbeatPktCount_++;
     const uchar heartbeatPacket[] = { 0x57, 0x5a, 0xaa, 0x5a, 0xaa };
     sendPacket((const char *)heartbeatPacket, sizeof(heartbeatPacket));
 
-    //qDebug() << "onSendHeartbeat count:" << heartbeatPktCount;
-    if (heartbeatPktCount >= 3) {
+    if (heartbeatPktCount_ >= 3) {
         LOG_ERROR("heartbeat keep alived timeout with server %s",
-                  svrHostAddr->toString().toStdString().c_str());
-        heartbeatPktCount = 0;
+                  svrIp_.toString().toStdString().c_str());
+        heartbeatPktCount_ = 0;
 
         emit heartbeatTimeout();
     }
@@ -103,8 +105,8 @@ void UdpClient::onSendHeartbeat()
 
 void UdpClient::readPendingDatagrams()
 {
-    while (udpSock->hasPendingDatagrams()) {
-        QNetworkDatagram datagram = udpSock->receiveDatagram();
+    while (localSock_.hasPendingDatagrams()) {
+        QNetworkDatagram datagram = localSock_.receiveDatagram();
         processTheDatagram(datagram);
     }
 }
@@ -161,15 +163,15 @@ void UdpClient::processTheDatagram(const QNetworkDatagram &datagram)
 }
 
 void UdpClient::processHeartbeatPkt(const QByteArray &byteArray)
-{  
-    heartbeatPktCount--;
+{
+    heartbeatPktCount_--;
 
     if ((0x5a == static_cast<uchar>(byteArray.at(1)))
             && (0xaa == static_cast<uchar>(byteArray.at(2)))
             && (0x5a == static_cast<uchar>(byteArray.at(3)))
             && (0xaa == static_cast<uchar>(byteArray.at(4)))) {
-        if (isFirstHeartbeatPkt) {
-            isFirstHeartbeatPkt = false;
+        if (isFirstHeartbeatPkt_) {
+            isFirstHeartbeatPkt_ = false;
             const char queryStates[] = { 0x5e, 0x01, 0x02, 0x03, 0x04 };
             sendPacket(static_cast<const char*>(queryStates), sizeof(queryStates));
         }

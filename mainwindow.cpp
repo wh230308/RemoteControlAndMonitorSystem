@@ -8,7 +8,7 @@
 #include "phonemonitorform.h"
 #include "radiomonitorform.h"
 #include "udpclientmanager.h"
-#include "serveraddrconfigdialog.h"
+#include "svraddrconfigdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     auto configurationMenu = menuBar()->addMenu(tr("Configuration"));
     auto svrAddressAct = new QAction(tr("Server Address"), this);
-    connect(svrAddressAct, SIGNAL(triggered()), this, SLOT(onConfigurateServerAddress()));
+    connect(svrAddressAct, SIGNAL(triggered()), this, SLOT(onConfigurateSvrAddr()));
     configurationMenu->addAction(svrAddressAct);
 
     mscMonitorForm = new MSCMonitorForm;
@@ -73,9 +73,8 @@ MainWindow::MainWindow(QWidget *parent) :
             mscMonitorForm, SLOT(onReportEthPortsState(char,char,char,char)));
     connect(udpClientMgr, SIGNAL(reportUserCardPortState(char,char,char,char,char)),
             mscMonitorForm, SLOT(onReportUserCardPortState(char,char,char,char,char)));
-    //connect(udpClientMgr, SIGNAL(reportCWPState(char,char,QByteArray,QByteArray,QByteArray,QByteArray)),
-    //       cwpMonitorForm, SLOT(onReportCWPState(char,char,QByteArray,QByteArray,QByteArray,QByteArray)));
-    //connect(this, SIGNAL(windowMove(int,int)), cwpMonitorForm, SLOT(onWindowMove(int,int)));
+    connect(udpClientMgr, SIGNAL(reportCWPState(char,char,QByteArray,QByteArray,QByteArray,QByteArray)),
+            cwpMonitorForm, SLOT(onReportCWPState(char,char,QByteArray,QByteArray,QByteArray,QByteArray)));
 }
 
 MainWindow::~MainWindow()
@@ -93,26 +92,60 @@ void MainWindow::onSwitchToCWP()
 {
     qDebug() << tr("Switch to CWP monitor...");
     ui->stackedWidget->setCurrentWidget(cwpMonitorForm);
+
+    char user[32] = { 'z', 'h', 'a', 'n', 'g', 's', 'h', 'a', 'n' };
+    char left[32] = { '1', '2', '3', '4' };
+    char right[32] = { '5', '6', '7', '8' };
+    char roles[96] = { 'a', 'd', 'm', 'i', 'n' };
+    roles[32] = 'n';
+    roles[33] = 'o';
+    roles[34] = 'r';
+    roles[35] = 'm';
+    roles[36] = 'a';
+    roles[37] = 'l';
+
+    roles[64] = 's';
+    roles[65] = 'u';
+    roles[66] = 'p';
+    roles[67] = 'e';
+    roles[68] = 'r';
+
+    QByteArray userName(user, 32);
+    QByteArray leftPhone(left, 32);
+    QByteArray rightPhone(right, 32);
+    QByteArray userRoles(roles, 96);
+    cwpMonitorForm->onReportCWPState(1, 2, userName, leftPhone, rightPhone, userRoles);
 }
 
 void MainWindow::onSwitchToPhone()
 {
     qDebug() << tr("Switch to phone monitor...");
-    ui->stackedWidget->setCurrentWidget(phoneMonitorForm);
+    //ui->stackedWidget->setCurrentWidget(phoneMonitorForm);
 
-    /*
     // test onReportMainCardState and onReportUserCardState
     {
-        char deviceId = 0x03;
+        char deviceId = 0x01;
         char mpuFlag = 0x00;
         char state = 0x01;
+        mscMonitorForm->onReportMainCardState(deviceId, mpuFlag, 1);
+        //mscMonitorForm->onReportEthPortsState(deviceId, mpuFlag, 0x01, 0x00);
+
+        deviceId = 0x02;
+        mpuFlag = 0x00;
+        state = 0x01;
+        mscMonitorForm->onReportMainCardState(deviceId, mpuFlag, 0x01);
+        mscMonitorForm->onReportEthPortsState(deviceId, mpuFlag, 0x01, 0x00);
+
+        deviceId = 0x03;
+        mpuFlag = 0x00;
+        state = 0x01;
         mscMonitorForm->onReportMainCardState(deviceId, mpuFlag, state);
-        mscMonitorForm->onReportEthPortsState(deviceId, mpuFlag, 0x01, 0x01);
+        mscMonitorForm->onReportEthPortsState(deviceId, mpuFlag, 0x01, 0x00);
 
         deviceId = 0x04;
         mpuFlag = 0x01;
         state = 0x01;
-        mscMonitorForm->onReportMainCardState(deviceId, mpuFlag, state);
+        mscMonitorForm->onReportMainCardState(deviceId, mpuFlag, 00);
         mscMonitorForm->onReportEthPortsState(deviceId, mpuFlag, 0x01, 0x01);
     }
 
@@ -124,15 +157,13 @@ void MainWindow::onSwitchToPhone()
         mscMonitorForm->onReportUserCardState(deviceId, slotIndex, type, state);
         mscMonitorForm->onReportUserCardPortState(deviceId, slotIndex, 0x00, 0x00, 0x01);
     }
-    */
 }
 
 void MainWindow::onSwitchToRadio()
 {
     qDebug() << tr("Switch to radio monitor...");
-    ui->stackedWidget->setCurrentWidget(radioMonitorForm);
+    //ui->stackedWidget->setCurrentWidget(radioMonitorForm);
 
-    /*
     // test onReportDeviceInfo
     char deviceId[] = { 0x01, 0x02, 0x03, 0x04, 0x06};
     char deviceType[] = { 0x00, 0x00, 0x01, 0x01, 0x01 };
@@ -146,13 +177,12 @@ void MainWindow::onSwitchToRadio()
         QByteArray deviceName(name[i], sizeof(name[i]) / sizeof(name[i][0]));
         mscMonitorForm->onReportDeviceInfo(deviceId[i], deviceType[i], deviceName);
     }
-    */
 }
 
-void MainWindow::onConfigurateServerAddress()
+void MainWindow::onConfigurateSvrAddr()
 {
-    auto svrAddrConfigDlg = new ServerAddrConfigDialog;
-    connect(svrAddrConfigDlg, SIGNAL(serversAddrChanged(QString,ushort,QString,ushort)),
-            udpClientMgr, SLOT(onServersAddrChanged(QString,ushort,QString,ushort)));
+    auto svrAddrConfigDlg = new SvrAddrConfigDialog;
+    connect(svrAddrConfigDlg, SIGNAL(svrAddrChanged(QString,ushort,QString,ushort)),
+            udpClientMgr, SLOT(onSvrAddrChanged(QString,ushort,QString,ushort)));
     svrAddrConfigDlg->exec();
 }

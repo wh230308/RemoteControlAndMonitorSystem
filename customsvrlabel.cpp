@@ -5,6 +5,10 @@
 
 #include "utility.h"
 
+static const QString svrImgPath(":/images/svr.gif");
+static const QString svrImgPathOnline(":/images/svr_online.jpg");
+static const QString svrImgPathOffline(":/images/svr_offline.jpg");
+static const QString svrImgPathSingleEth(":/images/svr_single_eth.jpg");
 
 CustomSvrLabel::CustomSvrLabel(const QString &svrName, QWidget *parent) : QLabel(parent)
 {
@@ -13,13 +17,28 @@ CustomSvrLabel::CustomSvrLabel(const QString &svrName, QWidget *parent) : QLabel
 
 void CustomSvrLabel::updateRunningState(int runningState)
 {
-    qDebug() << tr("updata svr running state, runningState:%1").arg(runningState);
+    if (runningState == 0) {
+        isRunning_ = false;
+        Utility::fillLabelWithImage(this, kSvrLabelWidth, kSvrLabelHeight, svrImgPathOffline);
+    }
+    else if (runningState == 1) {
+        isRunning_ = true;
+        if (isDoubleEths_)
+            Utility::fillLabelWithImage(this, kSvrLabelWidth, kSvrLabelHeight, svrImgPathOnline);
+        else
+            Utility::fillLabelWithImage(this, kSvrLabelWidth, kSvrLabelHeight, svrImgPathSingleEth);
+    }
 }
 
 void CustomSvrLabel::updateEthPortsState(int port1State, int port2State)
 {
-    qDebug() << tr("update svr ethernet state, port1State:%1, port2State%2")
-                .arg(port1State).arg(port2State);
+    if (!isRunning_) {
+        Utility::fillLabelWithImage(this, kSvrLabelWidth, kSvrLabelHeight, svrImgPathOffline);
+        return;
+    }
+
+    if ((port1State == 0) || (port2State == 0))
+        Utility::fillLabelWithImage(this, kSvrLabelWidth, kSvrLabelHeight, svrImgPathSingleEth);
 }
 
 void CustomSvrLabel::initContentsLayout(const QString &svrName)
@@ -27,7 +46,7 @@ void CustomSvrLabel::initContentsLayout(const QString &svrName)
     if (objectName().isEmpty())
         setObjectName(QString("customSvrLabel%1").arg(Utility::generateUniqueObjectId()));
 
-    Utility::fillLabelWithImage(this, kSvrLabelWidth, kSvrLabelHeight, QString(":/images/svr.gif"));
+    Utility::fillLabelWithImage(this, kSvrLabelWidth, kSvrLabelHeight, svrImgPath);
     setAlignment(Qt::AlignCenter);
 
     auto contentsLayout = new QVBoxLayout(this);

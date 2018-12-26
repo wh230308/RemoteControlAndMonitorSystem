@@ -14,8 +14,8 @@ class CustomCardLabel : public QLabel
 public:
     enum
     {
-        kCardLabelWidth = 51,
-        kCardLabelHeight = 178,
+        kCardLabelWidth = 56,
+        kCardLabelHeight = 182,
         kCardStateLampLabelWidth = 8,
         kCardStateLampLabelHeight = 8,
 
@@ -43,7 +43,7 @@ public:
     void updatePortState(int portId, int type, int state); // 更新端口状态，仅用户板
     void updateEthPortsState(int port1State, int port2State); // 更新网口状态，仅主控板
 
-    bool isCardRunning() const { return runningState_ == 0x01; }
+    bool isCardRunning() const { return isRunning_; }
     void flickerRunningStateLamp(int parity);
 
 private:
@@ -58,7 +58,8 @@ private:
 
     // 用户板端口，最多有256个端口，默认显示2个
     QMap<int, CardPort *> mapCardPorts_;
-    int runningState_; // 板卡运行状态：0离线；1在线
+    bool isRunning_ = false;
+    bool isDoubleEths_ = true;
 };
 
 #endif // CUSTOMCARDLABEL_H

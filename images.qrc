@@ -10,9 +10,15 @@
         <file>images/liu_item.gif</file>
         <file>images/network_bus.gif</file>
         <file>images/svr.gif</file>
-        <file>images/card_mpu.gif</file>
         <file>images/card.gif</file>
         <file>images/lamp_running.gif</file>
         <file>images/lamp_off.gif</file>
+        <file>images/svr_offline.jpg</file>
+        <file>images/svr_online.jpg</file>
+        <file>images/card_offline.jpg</file>
+        <file>images/card_single_eth.jpg</file>
+        <file>images/svr_single_eth.jpg</file>
+        <file>images/cwp_offline.jpg</file>
+        <file>images/cwp_online.jpg</file>
     </qresource>
 </RCC>

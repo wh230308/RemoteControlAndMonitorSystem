@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>ServerAddrConfigDialog</class>
- <widget class="QDialog" name="ServerAddrConfigDialog">
+ <class>SvrAddrConfigDialog</class>
+ <widget class="QDialog" name="SvrAddrConfigDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
