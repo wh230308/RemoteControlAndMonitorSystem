@@ -21,22 +21,8 @@ class MSCMonitorForm : public QWidget
 
 enum
 {
-    kFormDefaultWidth = 1440,
-    kFormDefaultHeight = 758,
-    kFormMargin = 20,
-
-    kSvrLabelWidth = 165,
-    kSvrLabelHeight = 165,
-    kSvrHStretch = 3,
-    kNetworkBusLabelWidth = 110,
-    kNetworkBusLabelHeight = kFormDefaultHeight - kFormMargin,
-    kNetworkBusHStretch = 2,
-    kLIULabelWidth = 1126,
-    kLIULabelHeigth = 220,
-    kLIUItemsHStretch = 20,
-    kLIUItemsSpace = 25,
-    kDefaultLIUItemsNumber = 3,
-
+    kDefaultLIUItemsNum = 3,
+    kLIUUnitHeight = 234,
     kDeviceStateTimerInterval = 1000 // 设备状态更新定时器
 };
 
@@ -61,28 +47,34 @@ protected:
 
 private:
     void initFormContentsLayout();
+    void setFormVerticalScroll();
 
     void addSvrItem(int deviceId, int deviceType, const QString &svrItemName);
     void addNetworkBusItem();
     void addLIUItem(int deviceId, int deviceType, const QString &liuItemName);
-
-    void checkChildWidgetsSizeToScroll(int formWidth, int formHeight);
 
     void updateDeviceState(int deviceId, int slotIndex, int type, int state);
     void updateEthPortsState(int deviceId, int mpuFlag, int port1State, int port2State);
     void updateUserCardPortState(int deviceId, int slotIndex, int portId, int type, int state);
 
 private:
-    QScrollArea *scrollArea_;
-    QWidget *widgetScrollAreaContent_;
-    QBoxLayout *layoutcontents_;
-    QBoxLayout *layoutSvrItems_;
-    QBoxLayout *layoutNetworkBusItems_;
-    QBoxLayout *layoutLIUItems_;
+    QWidget *scrollAreaWidgetContents_;
+    QBoxLayout *layoutSvrContents_;
+    QBoxLayout *layoutNetworkBusContents_;
+    QBoxLayout *layoutLIUContents_;
 
     QTimer *devStateTimer_;
-    int formWidth_ = 0;
-    int formHeight_ = 0;
+    int formWidth_ = 1440;
+    int formHeight_ = 758;
+    int svrLabelWidth_ = 166;
+    int svrLabelHeight_ = 162;
+    int svrItemsSpace_ = 70;
+    int networkBusLabelWidth_ = 172;
+    int networkBusLabelHeight_ = 758;
+    int liuLabelWidth_ = 1062;
+    int liuLabelHeight_ = 210;
+    int liuItemsSpace_ = 15;
+
     int liuItemCount_ = 0;
     // key表示设备号, value表示SVR或LIU设备
     QMap<int, Device *> mapDevs_;

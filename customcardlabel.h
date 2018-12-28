@@ -14,8 +14,8 @@ class CustomCardLabel : public QLabel
 public:
     enum
     {
-        kCardLabelWidth = 56,
-        kCardLabelHeight = 182,
+        kCardLabelWidth = 55,
+        kCardLabelHeight = 172,
         kCardStateLampLabelWidth = 8,
         kCardStateLampLabelHeight = 8,
 
@@ -36,7 +36,8 @@ public:
     };
 
 public:
-    CustomCardLabel(QWidget *parent = nullptr, bool isMPUCard = false);
+    CustomCardLabel(bool isMPUCard = false, QWidget *parent = nullptr);
+    ~CustomCardLabel();
 
     void updateCardTypeName(const QString &typeName);
     void updateRunningState(int state);
@@ -59,7 +60,7 @@ private:
     // 用户板端口，最多有256个端口，默认显示2个
     QMap<int, CardPort *> mapCardPorts_;
     bool isRunning_ = false;
-    bool isDoubleEths_ = true;
+    bool isDualEths_ = true;
 };
 
 #endif // CUSTOMCARDLABEL_H

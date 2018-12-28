@@ -28,14 +28,20 @@ static const QStringList cardTyepDescList = {
     QObject::tr("RIU"),
 };
 
-CustomLIULabel::CustomLIULabel(QWidget *parent)
+CustomLIULabel::CustomLIULabel(int width, int height, QWidget *parent)
     : QLabel(parent)
 {
-    initContentsLayout();
+    initContentsLayout(width, height);
 
     cardStateTimer_ = new QTimer(this);
     connect(cardStateTimer_, SIGNAL(timeout()), this, SLOT(onUpdateCardStateTimer()));
     cardStateTimer_->start(kCardStateTimerInterval);
+}
+
+CustomLIULabel::~CustomLIULabel()
+{
+    cardStateTimer_->stop();
+    vecLIUCards_.clear();
 }
 
 void CustomLIULabel::updateCardRunningState(int slotIndex, int cardType, int runningState)
@@ -79,21 +85,17 @@ void CustomLIULabel::updateCardEthPortsState(int mpuFlag, int port1State, int po
     lblLIUCard->updateEthPortsState(port1State, port2State);
 }
 
-void CustomLIULabel::initContentsLayout()
+void CustomLIULabel::initContentsLayout(int width, int height)
 {
     if (objectName().isEmpty())
         setObjectName(QString("customLIULabel%1").arg(Utility::generateUniqueObjectId()));
-
-    Utility::fillLabelWithImage(this, kLIULabelWidth, kLIULabelHeigth,
-                                QString(":/images/liu_item.gif"));
+    Utility::fillLabelWithImage(this, width, height, QString(":/images/liu_item.gif"));
     setAlignment(Qt::AlignCenter);
 
     layoutContents_ = new QGridLayout(this);
     layoutContents_->setObjectName(QString("layoutContents%1")
                                    .arg(Utility::generateUniqueObjectId()));
-    layoutContents_->setContentsMargins(8, 0, 8, 0);
-    layoutContents_->setHorizontalSpacing(6);
-    layoutContents_->setVerticalSpacing(0);
+    layoutContents_->setContentsMargins(10, 5, 10, 5);
 
     // 板卡及其对应槽位号
     int index = 0;
@@ -111,14 +113,14 @@ void CustomLIULabel::initContentsLayout()
         lblCardSlotIndex->setAlignment(Qt::AlignCenter);
         layoutContents_->addWidget(lblCardSlotIndex, 0, i, Qt::AlignCenter);
 
-        auto lblLIUCard = new CustomCardLabel(this, isMPUCard);
+        auto lblLIUCard = new CustomCardLabel(isMPUCard, this);
         layoutContents_->addWidget(lblLIUCard, 1, i, Qt::AlignCenter);
 
         vecLIUCards_.push_back(lblLIUCard);
     }
 
-    layoutContents_->setRowStretch(0, kLIUContentFirstRowHeight);
-    layoutContents_->setRowStretch(1, kLIUContentLastRowHeight);
+    layoutContents_->setRowStretch(0, kLIUContentsFirstRowHeight);
+    layoutContents_->setRowStretch(1, kLIUContentsLastRowHeight);
 }
 
 void CustomLIULabel::onUpdateCardStateTimer()

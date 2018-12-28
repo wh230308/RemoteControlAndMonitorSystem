@@ -17,32 +17,28 @@ public:
     enum
     {
         kCardNumberPerLIU = 18,
-        kLIULabelWidth = 1126,
-        kLIULabelHeigth = 220,
-        kLIUItemsVSpace = 25,
-
-        kLIUContentFirstRowHeight = 22,
-        kLIUContentLastRowHeight = 188,
+        kLIUContentsFirstRowHeight = 22,
+        kLIUContentsLastRowHeight = 188,
 
         kCardStateTimerInterval = 500 // 板卡状态更新定时器
     };
 
 public:
-    CustomLIULabel(QWidget *parent = nullptr);
+    CustomLIULabel(int width, int height, QWidget *parent = nullptr);
+    ~CustomLIULabel();
 
     void updateCardRunningState(int slotIndex, int cardType, int runningState);
     void updateCardPortState(int slotIndex, int portId, int type, int state);
     void updateCardEthPortsState(int mpuFlag, int port1State, int port2State);
 
 private:
-    void initContentsLayout();
+    void initContentsLayout(int width, int height);
 
 private slots:
     void onUpdateCardStateTimer();
 
 private:
     QGridLayout *layoutContents_;
-    QLabel *lblLIUName_;
     QVector<CustomCardLabel *> vecLIUCards_;
 
     QTimer *cardStateTimer_;

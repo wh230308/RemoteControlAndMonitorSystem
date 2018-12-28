@@ -26,11 +26,19 @@ static const QString cardImgPathSingleEth(":/images/card_single_eth.jpg");
 static const QString stateLampOffImgPath(":/images/lamp_off.gif");
 static const QString stateLampRunningImgPath(":/images/lamp_running.gif");
 
-CustomCardLabel::CustomCardLabel(QWidget *parent, bool isMPUCard)
+CustomCardLabel::CustomCardLabel(bool isMPUCard, QWidget *parent)
     : QLabel(parent)
     , isMPUCard_(isMPUCard)
 {
     initContentsLayout();
+}
+
+CustomCardLabel::~CustomCardLabel()
+{
+    foreach (auto item, mapCardPorts_) {
+        delete item;
+    }
+    mapCardPorts_.clear();
 }
 
 void CustomCardLabel::updateCardTypeName(const QString &typeName)

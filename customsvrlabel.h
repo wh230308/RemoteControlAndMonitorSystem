@@ -7,14 +7,8 @@ class CustomSvrLabel : public QLabel
 {
     Q_OBJECT
 
-enum
-{
-    kSvrLabelWidth = 165,
-    kSvrLabelHeight = 165,
-};
-
 public:
-    explicit CustomSvrLabel(const QString &svrName, QWidget *parent = nullptr);
+    explicit CustomSvrLabel(int width, int height, const QString &svrName, QWidget *parent = nullptr);
 
     void updateRunningState(int runningState);
     void updateEthPortsState(int port1State, int port2State);
@@ -23,8 +17,10 @@ private:
     void initContentsLayout(const QString &svrName);
 
 private:
+    int svrLabelWidth_;
+    int svrLabelHeight_;
     bool isRunning_ = false;
-    bool isDoubleEths_ = true;
+    bool isDualEths_ = true;
 };
 
 #endif // CUSTOMSVRLABEL_H
